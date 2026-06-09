@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: mart_macro_dashboard
+    description: "Macro Monitor mart with deterministic regime scoring and dashboard fields."
+    columns:
+      - name: date
+        tests:
+          - not_null
+      - name: macro_regime_score
+        description: "Deterministic Phase 1 macro research score. Not investment advice."
+
+  - name: mart_valuation_dashboard
+    description: "Phase 1 valuation mart using latest price and market cap only."
+    columns:
+      - name: ticker
+        tests:
+          - not_null
+      - name: is_investment_advice
+        description: "Always false in Phase 1."
+
+  - name: mart_sec_filing_placeholder
+    description: "Placeholder mart for the Phase 2 SEC Filing Agent."
+    columns:
+      - name: status
+        tests:
+          - not_null
+

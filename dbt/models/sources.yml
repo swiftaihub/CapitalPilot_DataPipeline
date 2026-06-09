@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "Raw source tables loaded by Python ingestion jobs."
+    tables:
+      - name: raw_macro_observations
+        description: "Raw FRED macroeconomic observations."
+        columns:
+          - name: series_id
+            tests:
+              - not_null
+          - name: date
+            tests:
+              - not_null
+          - name: value
+
+      - name: raw_prices
+        description: "Raw daily price and market-cap data."
+        columns:
+          - name: ticker
+            tests:
+              - not_null
+          - name: date
+            tests:
+              - not_null
+

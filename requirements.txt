@@ -1,0 +1,14 @@
+streamlit
+starlette>=1.2.1
+pandas
+numpy
+plotly
+requests
+pydantic
+PyYAML
+duckdb
+dbt-core
+dbt-duckdb
+yfinance
+python-dotenv
+pytest

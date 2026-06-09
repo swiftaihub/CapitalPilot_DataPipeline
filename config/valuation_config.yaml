@@ -1,0 +1,18 @@
+phase: 1
+signal_policy:
+  no_buy_sell_recommendations: true
+  frame_as_research_context: true
+  require_source_separation: true
+planned_metrics:
+  - Revenue TTM
+  - Net Income TTM
+  - FCF TTM
+  - PE
+  - PS
+  - FCF Yield
+  - FCF Margin
+  - Operating Margin
+  - Net Margin
+  - Revenue Growth YoY
+phase_1_notice: "Fundamental valuation metrics require SEC company facts and will be implemented in Phase 2."
+

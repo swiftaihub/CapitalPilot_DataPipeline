@@ -1,0 +1,23 @@
+watchlist:
+  - ticker: NVDA
+    name: NVIDIA
+    sector: Semiconductors
+  - ticker: AVGO
+    name: Broadcom
+    sector: Semiconductors
+  - ticker: MRVL
+    name: Marvell Technology
+    sector: Semiconductors
+  - ticker: MSFT
+    name: Microsoft
+    sector: Software
+  - ticker: AAPL
+    name: Apple
+    sector: Consumer Technology
+  - ticker: GOOGL
+    name: Alphabet
+    sector: Internet
+  - ticker: AMZN
+    name: Amazon
+    sector: Internet and Retail
+
