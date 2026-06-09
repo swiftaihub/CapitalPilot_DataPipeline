@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.streamlit/*.log
+
+# CapitalPilot
+data/*.duckdb
+data/*.wal
+dbt/profiles.yml
+dbt/target/
+dbt/dbt_packages/

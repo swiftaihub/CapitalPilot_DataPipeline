@@ -1,0 +1,9 @@
+version: 2
+
+models:
+  - name: int_macro_calculations
+    description: "Macro time series with calculated regime inputs."
+
+  - name: int_valuation_inputs
+    description: "Latest price and market-cap inputs for Phase 1 valuation dashboard."
+
