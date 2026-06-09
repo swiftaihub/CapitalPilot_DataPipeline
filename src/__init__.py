@@ -1,0 +1,2 @@
+"""CapitalPilot application package."""
+

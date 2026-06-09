@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_macro_observations
+    description: "Cleaned FRED macro observations."
+    columns:
+      - name: series_id
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+
+  - name: stg_prices
+    description: "Cleaned daily market price data."
+    columns:
+      - name: ticker
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+

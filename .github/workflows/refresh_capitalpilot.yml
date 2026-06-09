@@ -1,0 +1,77 @@
+name: Refresh CapitalPilot Pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub Actions cron uses UTC.
+    # 22:30 UTC is roughly 6:30 PM New York time during US daylight saving time.
+    - cron: "30 22 * * 1-5"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CAPITALPILOT_DB_TARGET: motherduck
+      MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create dbt profiles.yml
+        run: |
+          cp dbt/profiles.yml.example dbt/profiles.yml
+
+      - name: Validate dbt connection
+        working-directory: dbt
+        run: |
+          dbt debug --profiles-dir . --target prod
+
+      - name: Refresh macro raw data
+        run: |
+          python jobs/refresh_macro.py --target motherduck
+
+      - name: Refresh price raw data
+        run: |
+          python jobs/refresh_prices.py --target motherduck
+
+      - name: Run dbt build
+        working-directory: dbt
+        run: |
+          dbt build --profiles-dir . --target prod
+
+      - name: Generate dbt docs
+        working-directory: dbt
+        run: |
+          dbt docs generate --profiles-dir . --target prod
+
+      - name: Upload dbt artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: |
+            dbt/target/manifest.json
+            dbt/target/run_results.json
+            dbt/target/catalog.json
+

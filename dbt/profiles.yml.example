@@ -1,0 +1,15 @@
+capitalpilot:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../data/capitalpilot.duckdb"
+      schema: main
+      threads: 4
+
+    prod:
+      type: duckdb
+      path: "md:capitalpilot?motherduck_token={{ env_var('MOTHERDUCK_TOKEN') }}"
+      schema: main
+      threads: 4
+
