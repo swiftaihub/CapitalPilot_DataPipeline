@@ -1,87 +1,87 @@
-"""SEC Filing Agent placeholder dashboard."""
+"""SEC filing pipeline observability page."""
 
 from __future__ import annotations
 
+import pandas as pd
 import streamlit as st
 
-from src.config import load_future_mcp_tools
+from src.db import get_streamlit_connection
 
-st.set_page_config(page_title="SEC Filing Agent", page_icon="📄", layout="wide")
-
-EXAMPLE_QUERIES = [
-    "帮我查一下 NVDA 最近三次 10-Q 里 risk factors 有什么变化",
-    "找出 watchlist 里最近 30 天有 8-K 的公司",
-    "比较 MRVL 和 AVGO 的 revenue growth、FCF yield 和最近 filing 风险",
-    "帮我基于 filings 和 valuation 生成一份本周 research brief",
-]
-
-PLANNED_CAPABILITIES = [
-    "Recent SEC filing monitor",
-    "10-K / 10-Q / 8-K filtering",
-    "Risk factor diffing",
-    "Company facts extraction",
-    "Thesis impact analysis",
-    "MCP-powered AI research assistant",
-    "Weekly research brief generation",
-]
-
-ROADMAP = [
-    "Add SEC EDGAR ingestion jobs",
-    "Add raw SEC filings and company facts tables",
-    "Add dbt SEC staging/intermediate/marts",
-    "Add filing text extraction and section parsing",
-    "Add risk factor diffing",
-    "Build read-only MCP server",
-    "Add AI agent chat UI to Streamlit",
-    "Cache AI research outputs",
-    "Generate weekly research brief",
-]
+st.set_page_config(page_title="SEC Filing Pipeline", page_icon="SEC", layout="wide")
 
 
-st.title("SEC Filing Agent")
-st.caption("Phase 2 planned: SEC EDGAR + MCP-powered AI research assistant")
+@st.cache_data(ttl=300)
+def load_sec_pipeline_data() -> tuple[dict[str, pd.DataFrame], str | None]:
+    db_state = get_streamlit_connection()
+    if not db_state.available or db_state.connection is None:
+        return {}, db_state.message
+    conn = db_state.connection
 
-st.warning(
-    "This page is a placeholder in Phase 1. Full SEC ingestion, filing text extraction, "
-    "risk factor diffing, and MCP AI-agent querying will be implemented in Phase 2."
-)
+    def query(sql: str) -> pd.DataFrame:
+        try:
+            return conn.execute(sql).df()
+        except Exception:
+            return pd.DataFrame()
 
-st.subheader("Planned Capabilities")
-cap_cols = st.columns(3)
-for idx, capability in enumerate(PLANNED_CAPABILITIES):
-    with cap_cols[idx % 3]:
-        st.markdown(f"**{capability}**")
-        st.write("Planned for Phase 2")
+    return {
+        "dashboard": query("select * from marts.mart_sec_filings_dashboard order by latest_filing_date desc nulls last"),
+        "alerts": query("select * from marts.mart_watchlist_8k_alerts order by filing_date desc nulls last limit 100"),
+        "queue": query(
+            """
+            select summary_status, count(*) as filings
+            from marts.mart_sec_ai_summary_queue
+            group by 1
+            order by 1
+            """
+        ),
+        "queue_rows": query(
+            """
+            select ticker, form_type, filing_date, accession_number, summary_status, document_url
+            from marts.mart_sec_ai_summary_queue
+            order by filing_date desc nulls last
+            limit 100
+            """
+        ),
+    }, None
 
-st.subheader("Example AI Queries")
-for query in EXAMPLE_QUERIES:
-    st.code(query, language="text")
 
-st.subheader("AI Research Prompt")
-prompt = st.chat_input("Phase 2 SEC research prompt")
-st.button("Phase 2 coming soon", disabled=True)
+st.title("SEC Filing Pipeline")
+st.caption("Internal EDGAR ingestion, dbt mart, and AI-summary queue checks. Interactive AI belongs in CapitalPilot_AI.")
 
-if prompt:
-    with st.chat_message("user"):
-        st.write(prompt)
-    with st.chat_message("assistant"):
-        st.write("AI SEC research agent is planned for Phase 2. This input is not executed yet.")
+data, error = load_sec_pipeline_data()
+if error:
+    st.info(error)
+    st.stop()
 
-mcp_config = load_future_mcp_tools()
-with st.expander("Future MCP Tool Contract Preview", expanded=False):
-    st.write(mcp_config.get("summary", "Planned read-only MCP tools."))
-    for tool in mcp_config.get("tools", []):
-        st.markdown(f"**{tool.get('name')}**")
-        st.write(tool.get("description", ""))
-        st.caption(f"Inputs: {', '.join(tool.get('inputs', []))}")
-        st.caption(f"Output: {tool.get('output', '')}")
-    guardrails = mcp_config.get("guardrails", [])
-    if guardrails:
-        st.markdown("**Guardrails**")
-        for guardrail in guardrails:
-            st.write(f"- {guardrail}")
+dashboard = data.get("dashboard", pd.DataFrame())
+alerts = data.get("alerts", pd.DataFrame())
+queue = data.get("queue", pd.DataFrame())
 
-st.subheader("Technical Roadmap")
-for index, item in enumerate(ROADMAP, start=1):
-    st.write(f"{index}. {item}")
+cols = st.columns(4)
+cols[0].metric("Tickers With Filings", 0 if dashboard.empty else len(dashboard))
+cols[1].metric("Recent 8-K Alerts", 0 if alerts.empty else len(alerts))
+cols[2].metric("Queue Rows", 0 if data.get("queue_rows", pd.DataFrame()).empty else len(data["queue_rows"]))
+pending = int(queue.loc[queue["summary_status"].isin(["pending", "pending_document"]), "filings"].sum()) if not queue.empty else 0
+cols[3].metric("Pending AI Summaries", pending)
 
+tab_dashboard, tab_alerts, tab_queue = st.tabs(["Filing Dashboard", "8-K Alerts", "AI Queue"])
+with tab_dashboard:
+    if dashboard.empty:
+        st.info("No SEC filing dashboard rows yet. Run `jobs/refresh_sec_filings.py` with SEC_USER_AGENT, then dbt build.")
+    else:
+        st.dataframe(dashboard, use_container_width=True, hide_index=True)
+
+with tab_alerts:
+    if alerts.empty:
+        st.info("No recent 8-K alerts.")
+    else:
+        st.dataframe(alerts, use_container_width=True, hide_index=True)
+
+with tab_queue:
+    if queue.empty:
+        st.info("SEC AI summary queue is empty or not built yet.")
+    else:
+        st.dataframe(queue, use_container_width=True, hide_index=True)
+        st.dataframe(data["queue_rows"], use_container_width=True, hide_index=True)
+
+st.warning("Summaries are written by CapitalPilot_AI into ai.sec_filing_summaries; this repo only owns the queue and table contract.")

@@ -1,2 +1,2 @@
-"""Research service layer for Streamlit and future read-only MCP tools."""
+"""Legacy research service helpers retained for compatibility."""
 

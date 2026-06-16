@@ -1,0 +1,24 @@
+schema_version: 1
+
+enabled: true
+provider: yfinance
+max_expirations_per_ticker: 2
+
+watchlist:
+  use_config_watchlist: true
+  extra_tickers:
+    - SPY
+    - QQQ
+
+providers:
+  yfinance:
+    enabled: true
+    description: "Best-effort free option chain provider for local research."
+
+future_providers:
+  - Polygon
+  - Tradier
+  - ORATS
+  - Cboe DataShop
+  - Nasdaq Data Link
+

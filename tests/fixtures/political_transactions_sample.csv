@@ -1,0 +1,4 @@
+official_name,role,branch,chamber,party,state,ticker,asset_name,asset_type,transaction_type,transaction_date,notification_date,filing_date,amount_text,owner,source_report_id,source_url,source_pdf_url,confidence_score
+Jane Example,Senator,senate,Senate,I,CA,NVDA,NVIDIA Corp,Stock,Purchase,2026-05-01,2026-05-10,2026-05-15,"$1,001 - $15,000",Self,report-1,https://example.gov/report-1,https://example.gov/report-1.pdf,0.9
+Jane Example,Senator,senate,Senate,I,CA,MSFT,Microsoft Corp,Stock,Sale,2026-05-02,2026-05-10,2026-05-15,"Over $50,000",Spouse,report-1,https://example.gov/report-1,https://example.gov/report-1.pdf,0.8
+

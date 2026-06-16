@@ -1,0 +1,28 @@
+schema_version: 1
+
+default_provider: manual
+
+providers:
+  manual:
+    enabled: true
+    description: "Loads CSV files with article metadata for local/offline ingestion."
+    default_path: data/manual/news_articles
+
+  alpha_vantage:
+    enabled: true
+    description: "Optional Alpha Vantage NEWS_SENTIMENT provider."
+    api_key_env: ALPHA_VANTAGE_API_KEY
+    endpoint: https://www.alphavantage.co/query
+
+  gdelt:
+    enabled: false
+    description: "Future broad macro/geopolitical news provider."
+
+  rss:
+    enabled: false
+    description: "Future RSS provider for permitted publisher feeds."
+
+limits:
+  default_limit_per_category: 25
+  max_limit_per_category: 100
+

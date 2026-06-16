@@ -1,8 +1,7 @@
-"""Phase 2 placeholder SEC research service functions.
+"""Deprecated SEC research service placeholders.
 
-These functions are intentionally Streamlit-independent and safe to expose through
-a future read-only MCP server. They do not query SEC, MotherDuck, LLMs, or MCP in
-Phase 1.
+CapitalPilot_DataPipeline now owns SEC ingestion tables, dbt marts, and AI queue
+contracts. Interactive AI and tool orchestration belong in CapitalPilot_AI.
 """
 
 from __future__ import annotations
@@ -16,14 +15,14 @@ def search_sec_filings(
     limit: int = 20,
 ) -> dict:
     """
-    Phase 2 placeholder.
+    Deprecated placeholder.
 
     Future behavior:
-    Search recent SEC filings from MotherDuck marts.
+    Read SEC filing marts from CapitalPilot_UI or CapitalPilot_AI.
     """
     return {
         "status": "planned_phase_2",
-        "message": "SEC filing search is not implemented in Phase 1.",
+        "message": "Interactive SEC filing search is not implemented in CapitalPilot_DataPipeline.",
         "ticker": ticker,
         "form_type": form_type,
         "start_date": start_date,
@@ -35,14 +34,14 @@ def search_sec_filings(
 
 def get_recent_10q_risk_factor_changes(ticker: str, count: int = 3) -> dict:
     """
-    Phase 2 placeholder.
+    Deprecated placeholder.
 
     Future behavior:
     Compare risk factors across the latest N 10-Q filings for a ticker.
     """
     return {
         "status": "planned_phase_2",
-        "message": "Risk factor diffing is not implemented in Phase 1.",
+        "message": "Risk factor diffing belongs in CapitalPilot_AI using DataPipeline SEC tables.",
         "ticker": ticker,
         "count": count,
         "data": [],
@@ -51,14 +50,14 @@ def get_recent_10q_risk_factor_changes(ticker: str, count: int = 3) -> dict:
 
 def find_watchlist_8k_filings(days_back: int = 30) -> dict:
     """
-    Phase 2 placeholder.
+    Deprecated placeholder.
 
     Future behavior:
     Find watchlist companies with 8-K filings in the specified date range.
     """
     return {
         "status": "planned_phase_2",
-        "message": "8-K watchlist search is not implemented in Phase 1.",
+        "message": "Use DataPipeline marts.mart_watchlist_8k_alerts for produced 8-K rows.",
         "days_back": days_back,
         "data": [],
     }
@@ -66,14 +65,14 @@ def find_watchlist_8k_filings(days_back: int = 30) -> dict:
 
 def compare_companies_research_snapshot(ticker_a: str, ticker_b: str) -> dict:
     """
-    Phase 2 placeholder.
+    Deprecated placeholder.
 
     Future behavior:
     Compare revenue growth, FCF yield, valuation, and recent filing risks.
     """
     return {
         "status": "planned_phase_2",
-        "message": "Company comparison with SEC context is not implemented in Phase 1.",
+        "message": "Company comparison belongs in CapitalPilot_AI/UI using DataPipeline marts.",
         "ticker_a": ticker_a,
         "ticker_b": ticker_b,
         "data": {},
@@ -86,14 +85,14 @@ def generate_weekly_research_brief(
     end_date: str | None = None,
 ) -> dict:
     """
-    Phase 2 placeholder.
+    Deprecated placeholder.
 
     Future behavior:
     Generate a weekly research brief using macro, filings, valuation, and watchlist context.
     """
     return {
         "status": "planned_phase_2",
-        "message": "Weekly research brief generation is not implemented in Phase 1.",
+        "message": "Weekly research brief generation belongs in CapitalPilot_AI.",
         "watchlist": watchlist,
         "start_date": start_date,
         "end_date": end_date,
