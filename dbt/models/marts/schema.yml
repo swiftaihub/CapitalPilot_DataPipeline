@@ -20,9 +20,42 @@ models:
         description: "Always false in Phase 1."
 
   - name: mart_sec_filing_placeholder
-    description: "Placeholder mart for the Phase 2 SEC Filing Agent."
+    description: "Deprecated placeholder retained for Phase 1 compatibility."
     columns:
       - name: status
         tests:
           - not_null
+
+  - name: mart_sec_filings_dashboard
+    description: "SEC filing dashboard mart."
+
+  - name: mart_watchlist_8k_alerts
+    description: "Recent 8-K alert mart for watchlist tickers."
+
+  - name: mart_sec_ai_summary_queue
+    description: "SEC filing AI summary queue consumed by CapitalPilot_AI."
+
+  - name: mart_daily_news_dashboard
+    description: "Daily configurable news dashboard mart."
+
+  - name: mart_news_ai_summary_queue
+    description: "News AI summary queue consumed by CapitalPilot_AI."
+
+  - name: mart_political_trading_dashboard
+    description: "Public political and official disclosure dashboard mart."
+
+  - name: mart_accumulation_dashboard
+    description: "Long-term accumulation research indicator mart."
+    columns:
+      - name: is_investment_advice
+        description: "Always false."
+
+  - name: mart_options_dashboard
+    description: "Options chain analytics mart for internal research only."
+
+  - name: mart_technical_dashboard
+    description: "Latest technical indicator snapshot by ticker."
+
+  - name: mart_daily_market_summary
+    description: "Daily technical breadth and market summary mart."
 

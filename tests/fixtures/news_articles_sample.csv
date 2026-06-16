@@ -1,0 +1,5 @@
+source_provider,publisher,title,url,published_at,category,query,related_tickers,raw_summary,raw_sentiment
+manual,Example Wire,Fed signals patience,https://example.com/fed?utm_source=test,2026-06-14T12:00:00,fomc_rate_decision,Fed,NVDA;QQQ,Policy unchanged,neutral
+manual,Example Wire,Fed signals patience,https://example.com/fed,2026-06-14T12:00:00,fomc_rate_decision,Fed,NVDA;QQQ,Duplicate row,neutral
+manual,Chip Desk,AI capex rises,https://example.com/ai-capex,2026-06-14T14:00:00,ai_semiconductor_industry,AI capex,NVDA,Capex update,bullish
+

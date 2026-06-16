@@ -15,6 +15,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.config import load_watchlist
 from src.db import upsert_raw_prices
+from src.pipeline_logging import finish_run, finish_task, log_error, start_run, start_task
 from src.price_client import fetch_price_history
 
 
@@ -45,22 +46,34 @@ def _tickers_from_watchlist() -> list[str]:
 
 def main() -> int:
     args = parse_args()
-    frames: list[pd.DataFrame] = []
-    for ticker in _tickers_from_watchlist():
-        try:
-            print(f"Fetching yfinance history for {ticker}")
-            frame = fetch_price_history(ticker, start_date=args.start_date, end_date=args.end_date)
-            if frame.empty:
-                print(f"Warning: no price data returned for {ticker}; skipping.")
-                continue
-            frames.append(frame)
-        except Exception as exc:
-            print(f"Warning: failed to fetch {ticker}: {exc}")
+    run_id = start_run("refresh_prices", target=args.target, metadata={"start_date": args.start_date, "end_date": args.end_date})
+    task_id = start_task(run_id, "prices", target=args.target)
+    try:
+        frames: list[pd.DataFrame] = []
+        for ticker in _tickers_from_watchlist():
+            try:
+                print(f"Fetching yfinance history for {ticker}")
+                frame = fetch_price_history(ticker, start_date=args.start_date, end_date=args.end_date)
+                if frame.empty:
+                    print(f"Warning: no price data returned for {ticker}; skipping.")
+                    continue
+                frames.append(frame)
+            except Exception as exc:
+                print(f"Warning: failed to fetch {ticker}: {exc}")
+                log_error(run_id=run_id, task_name="prices", error=exc, target=args.target, context={"ticker": ticker})
 
-    combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-    inserted = upsert_raw_prices(combined, target=args.target)
-    print(f"Upserted {inserted} price rows.")
-    return 0
+        combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        inserted = upsert_raw_prices(combined, target=args.target)
+        finish_task(task_id, status="success", target=args.target, row_count=inserted)
+        finish_run(run_id, status="success", target=args.target)
+        print(f"Upserted {inserted} price rows.")
+        return 0
+    except Exception as exc:
+        log_error(run_id=run_id, task_name="prices", error=exc, target=args.target)
+        finish_task(task_id, status="failed", target=args.target, error_message=str(exc))
+        finish_run(run_id, status="failed", target=args.target)
+        print(f"Price refresh failed: {exc}")
+        return 1
 
 
 if __name__ == "__main__":

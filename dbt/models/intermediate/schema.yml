@@ -7,3 +7,36 @@ models:
   - name: int_valuation_inputs
     description: "Latest price and market-cap inputs for Phase 1 valuation dashboard."
 
+  - name: int_recent_sec_filings
+    description: "Recent SEC filings for watchlist tickers."
+
+  - name: int_watchlist_recent_8k
+    description: "Recent watchlist 8-K filings for alerting."
+
+  - name: int_sec_10k_history
+    description: "10-K filing history by ticker."
+
+  - name: int_news_deduped
+    description: "Deduplicated daily market-news article metadata."
+
+  - name: int_daily_news_by_category
+    description: "Daily article counts and headlines by configured category."
+
+  - name: int_political_trades_normalized
+    description: "Normalized political disclosure transaction rows with uncertainty flags."
+
+  - name: int_political_ticker_ownership
+    description: "Ticker-level political disclosure aggregation."
+
+  - name: int_price_technical_features
+    description: "Rolling price, return, volatility, RSI, and support/resistance features."
+
+  - name: int_accumulation_signals
+    description: "Deterministic, non-advice long-term accumulation research labels."
+
+  - name: int_technical_indicators
+    description: "Daily watchlist technical indicators including EMA and MACD."
+
+  - name: int_options_features
+    description: "Option-chain feature table for internal research."
+

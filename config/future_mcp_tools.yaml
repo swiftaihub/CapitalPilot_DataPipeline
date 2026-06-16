@@ -1,55 +1,17 @@
-phase: 2
-summary: "Planned read-only MCP tools for the SEC Filing Agent and AI research assistant."
-tools:
-  - name: search_sec_filings
-    description: "Search recent SEC filing metadata from MotherDuck marts by ticker, form type, and date range."
-    inputs:
-      - ticker
-      - form_type
-      - start_date
-      - end_date
-      - limit
-    output: "Recent filing metadata rows with source links."
-  - name: get_recent_10q_risk_factor_changes
-    description: "Compare risk factor language across the latest N 10-Q filings for a ticker."
-    inputs:
-      - ticker
-      - count
-    output: "Structured risk-factor additions, removals, and material wording changes."
-  - name: find_watchlist_8k_filings
-    description: "Find watchlist companies with 8-K filings in a recent time window."
-    inputs:
-      - days_back
-    output: "Watchlist tickers with recent 8-K filing metadata."
-  - name: compare_companies_research_snapshot
-    description: "Compare two companies using valuation, growth, FCF, and recent SEC risk context."
-    inputs:
-      - ticker_a
-      - ticker_b
-    output: "Company comparison snapshot with source data and interpretation separated."
-  - name: generate_weekly_research_brief
-    description: "Generate a weekly research brief from macro, valuation, filing, and watchlist context."
-    inputs:
-      - watchlist
-      - start_date
-      - end_date
-    output: "Draft research brief with citations and insufficient-data flags."
-  - name: get_macro_snapshot
-    description: "Return the latest macro regime, component metrics, and deterministic explanation."
-    inputs:
-      - as_of_date
-    output: "Macro snapshot from marts.mart_macro_dashboard."
-  - name: get_valuation_snapshot
-    description: "Return price, market cap, and Phase 2 fundamental valuation fields when available."
-    inputs:
-      - ticker
-    output: "Valuation snapshot from marts.mart_valuation_dashboard."
+phase: deprecated
+summary: "Deprecated Phase 1 MCP planning file. CapitalPilot_DataPipeline now exposes data contracts and AI queue tables only."
+replacement:
+  ai_repo: CapitalPilot_AI
+  ui_repo: CapitalPilot_UI
+  queue_marts:
+    - marts.mart_sec_ai_summary_queue
+    - marts.mart_news_ai_summary_queue
+  ai_output_tables:
+    - ai.sec_filing_summaries
+    - ai.news_summaries
 guardrails:
-  - "Read-only only."
+  - "No interactive AI chat in CapitalPilot_DataPipeline."
+  - "No MCP server in CapitalPilot_DataPipeline."
   - "No trading."
   - "No portfolio execution."
-  - "No database writes from AI agent."
   - "No deterministic buy/sell recommendations."
-  - "If data is missing, the agent must say insufficient data."
-  - "All AI responses must distinguish source data from interpretation."
-

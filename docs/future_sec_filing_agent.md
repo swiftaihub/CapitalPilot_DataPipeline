@@ -1,23 +1,25 @@
-# Future SEC Filing Agent
+# SEC Filing Pipeline
 
-## Phase 2 SEC Filing Agent Plan
+Phase 2 adds EDGAR ingestion and AI-ready SEC summary contracts inside
+CapitalPilot_DataPipeline.
 
-1. SEC EDGAR ingestion
-2. Ticker-to-CIK mapping
-3. Recent filing metadata
-4. Company facts ingestion
-5. Filing document download
-6. Filing section parser
-7. Risk factor extraction
-8. Risk factor diffing
-9. Thesis impact analysis
-10. dbt SEC marts
-11. MCP server
-12. AI chat UI integration
+Implemented/owned here:
 
-## Phase 1 Boundary
+1. SEC ticker-to-CIK mapping ingestion.
+2. SEC submissions API filing metadata for `10-K`, `10-Q`, and `8-K`.
+3. Optional primary document download.
+4. Raw SEC tables and dbt staging/intermediate/mart models.
+5. `marts.mart_sec_ai_summary_queue` for `CapitalPilot_AI`.
+6. `ai.sec_filing_summaries` schema for structured AI outputs.
+7. Internal Streamlit observability for SEC freshness, rows, alerts, and queue
+   status.
 
-Phase 1 intentionally includes only a placeholder SEC dashboard, safe service-layer placeholder functions, a dbt placeholder mart, and future integration documentation.
+Owned by `CapitalPilot_AI`:
 
-The project does not yet implement live SEC EDGAR ingestion, SEC company facts ingestion, filing text extraction, risk factor diffing, or autonomous AI research.
+1. Filing section parsing if LLM-assisted.
+2. Risk-factor diffing if LLM-assisted.
+3. Prompt orchestration and model selection.
+4. Writing structured summaries into `ai.sec_filing_summaries`.
+5. Any future MCP/tool-calling interface.
 
+This repo does not implement interactive SEC chat or an MCP research agent.
