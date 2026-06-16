@@ -2,10 +2,27 @@ name: Refresh CapitalPilot Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      political_source:
+        description: Political disclosure source to refresh.
+        required: false
+        default: all
+        type: choice
+        options:
+          - manual
+          - house
+          - senate
+          - oge
+          - all
+      political_max_reports:
+        description: Maximum political disclosure reports to fetch per source.
+        required: false
+        default: 50
+        type: number
   schedule:
     # GitHub Actions cron uses UTC.
-    # 22:30 UTC is roughly 6:30 PM New York time during US daylight saving time.
-    - cron: "30 22 * * 1-5" 
+    # 22:00 UTC is 5:00 PM EST, Monday through Friday.
+    - cron: "0 22 * * 1-5"
 
 jobs:
   refresh:
@@ -18,6 +35,8 @@ jobs:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      POLITICAL_SOURCE: ${{ github.event.inputs.political_source || 'all' }}
+      POLITICAL_MAX_REPORTS: ${{ github.event.inputs.political_max_reports || '50' }}
 
     steps:
       - name: Checkout repository
@@ -52,7 +71,7 @@ jobs:
 
       - name: Run orchestrated data pipeline
         run: |
-          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source all --political-max-reports 
+          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source "${POLITICAL_SOURCE}" --political-max-reports "${POLITICAL_MAX_REPORTS}"
 
       - name: Generate dbt docs
         working-directory: dbt
