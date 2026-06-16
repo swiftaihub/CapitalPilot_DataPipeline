@@ -49,7 +49,9 @@ select
     filings.filing_detail_url,
     filings.document_url,
     case
-        when ai_latest.summary_id is not null then 'completed'
+        when ai_latest.summary_id is not null
+         and coalesce(ai_latest.market_impact_label, ai_latest.business_impact, '') <> 'insufficient_data'
+            then 'completed'
         when documents.download_status = 'failed' then 'failed'
         when coalesce(documents.document_text, filings.document_text) is null then 'pending_document'
         else 'pending'
@@ -64,4 +66,3 @@ left join documents
 left join ai_latest
   on filings.accession_number = ai_latest.accession_number
  and ai_latest.rn = 1
-

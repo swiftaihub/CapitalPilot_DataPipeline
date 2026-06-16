@@ -5,7 +5,7 @@ on:
   schedule:
     # GitHub Actions cron uses UTC.
     # 22:30 UTC is roughly 6:30 PM New York time during US daylight saving time.
-    - cron: "30 22 * * 1-5"
+    - cron: "30 22 * * 1-5" 
 
 jobs:
   refresh:
@@ -52,7 +52,7 @@ jobs:
 
       - name: Run orchestrated data pipeline
         run: |
-          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source all --political-max-reports 20
+          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source all --political-max-reports 
 
       - name: Generate dbt docs
         working-directory: dbt
