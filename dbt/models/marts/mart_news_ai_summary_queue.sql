@@ -36,7 +36,9 @@ select
     articles.raw_sentiment,
     articles.related_tickers_json,
     case
-        when ai_latest.summary_id is not null then 'completed'
+        when ai_latest.summary_id is not null
+         and coalesce(ai_latest.bull_bear_label, '') <> 'insufficient_data'
+            then 'completed'
         else 'pending'
     end as summary_status,
     ai_latest.summary_id,
@@ -48,4 +50,3 @@ left join ai_latest
  and articles.category = ai_latest.category
  and articles.title = ai_latest.headline
  and ai_latest.rn = 1
-
