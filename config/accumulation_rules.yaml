@@ -1,0 +1,25 @@
+schema_version: 1
+
+minimum_observations: 200
+
+score_rules:
+  drawdown_52w:
+    starter_threshold: -0.10
+    accumulation_threshold: -0.25
+  rsi_14:
+    oversold: 35
+    extended: 70
+  price_vs_sma_200_pct:
+    deeply_below: -0.15
+    extended_above: 0.25
+  volatility_20d:
+    high: 0.04
+
+labels:
+  watch: "Research watchlist only"
+  starter_zone: "Starter-zone research signal"
+  accumulation_zone: "Accumulation-zone research signal"
+  extended: "Extended research signal"
+  risk_off: "Risk-off research signal"
+  insufficient_data: "Insufficient data"
+

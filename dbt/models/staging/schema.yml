@@ -21,3 +21,18 @@ models:
         tests:
           - not_null
 
+  - name: stg_sec_filings
+    description: "Cleaned SEC filing metadata."
+
+  - name: stg_sec_filing_documents
+    description: "Cleaned SEC filing document downloads."
+
+  - name: stg_news_articles
+    description: "Cleaned configurable news article metadata."
+
+  - name: stg_political_transactions
+    description: "Cleaned public political and official transaction disclosures."
+
+  - name: stg_options_chain
+    description: "Cleaned option-chain rows."
+

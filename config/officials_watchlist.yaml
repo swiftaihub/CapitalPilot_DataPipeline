@@ -1,0 +1,46 @@
+schema_version: 1
+
+officials:
+  - name: President of the United States
+    role: President
+    branch: executive
+    source_type: oge
+    enabled: false
+    source_url: https://www.oge.gov/
+    search_hint: "Search OGE public financial disclosure reports for current President filings."
+
+  - name: Vice President of the United States
+    role: Vice President
+    branch: executive
+    source_type: oge
+    enabled: false
+    source_url: https://www.oge.gov/
+    search_hint: "Search OGE public financial disclosure reports for current Vice President filings."
+
+  - name: Watchlist Senator
+    role: Senator
+    branch: senate
+    source_type: senate
+    enabled: false
+    source_url: https://efdsearch.senate.gov/
+    search_hint: "Replace with a specific senator name before live collection."
+
+  - name: House Periodic Transaction Reports
+    role: Representative
+    branch: house
+    source_type: house
+    enabled: true
+    source_url: https://disclosures-clerk.house.gov/FinancialDisclosure
+    search_hint: "Automated source: yearly House Clerk XML index plus public PTR PDFs."
+
+manual_ingestion:
+  default_path: data/manual/official_trades
+  required_columns:
+    - official_name
+    - role
+    - branch
+    - transaction_date
+    - transaction_type
+    - asset_name
+    - amount_text
+    - source_url

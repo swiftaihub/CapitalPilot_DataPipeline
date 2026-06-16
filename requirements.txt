@@ -12,3 +12,4 @@ dbt-duckdb
 yfinance
 python-dotenv
 pytest
+pypdf

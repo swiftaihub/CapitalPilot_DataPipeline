@@ -17,5 +17,5 @@ def test_sec_placeholder_functions_return_planned_status():
     ]
 
     assert all(response["status"] == "planned_phase_2" for response in responses)
-    assert all("Phase 1" in response["message"] for response in responses)
+    assert all("CapitalPilot_AI" in response["message"] or "DataPipeline" in response["message"] for response in responses)
 

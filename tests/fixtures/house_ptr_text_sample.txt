@@ -1,0 +1,7 @@
+Periodic Transaction Report
+Name: Hon. Mark Alford
+Status: Member
+State/District: MO04
+ID Owner Asset Transaction Type Date Notification Date Amount Cap. Gains > $200?
+Amazon.com, Inc. - Common Stock (AMZN) [ST] S (partial) 03/16/202603/16/2026$1,001 - $15,000
+Apple Inc. - Common Stock (AAPL) [ST] P 03/17/202603/18/2026$15,001 - $50,000

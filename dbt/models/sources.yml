@@ -26,3 +26,52 @@ sources:
             tests:
               - not_null
 
+      - name: raw_sec_company_tickers
+        description: "SEC ticker-to-CIK mapping from company_tickers.json."
+
+      - name: raw_sec_filings
+        description: "SEC filing metadata from the submissions API."
+        columns:
+          - name: accession_number
+            tests:
+              - not_null
+          - name: ticker
+            tests:
+              - not_null
+
+      - name: raw_sec_filing_documents
+        description: "Downloaded SEC primary filing documents when available."
+
+      - name: raw_sec_companyfacts
+        description: "Optional raw SEC companyfacts payloads for future fundamentals."
+
+      - name: raw_news_articles
+        description: "Raw configurable market-news article metadata."
+        columns:
+          - name: article_id
+            tests:
+              - not_null
+
+      - name: raw_political_disclosure_reports
+        description: "Raw public official disclosure report metadata."
+
+      - name: raw_political_transactions
+        description: "Raw public political and official transaction disclosure rows."
+        columns:
+          - name: transaction_id
+            tests:
+              - not_null
+
+      - name: raw_options_chain
+        description: "Raw option-chain rows from optional providers."
+
+  - name: ai
+    schema: ai
+    description: "Structured AI summary output tables written by CapitalPilot_AI."
+    tables:
+      - name: sec_filing_summaries
+        description: "AI-generated SEC filing summaries written by CapitalPilot_AI."
+
+      - name: news_summaries
+        description: "AI-generated news summaries and sentiment labels written by CapitalPilot_AI."
+

@@ -1,0 +1,457 @@
+# CapitalPilot news category configuration
+# Purpose: guide daily market-news collection, AI summarization, and bull/bear market impact labeling.
+# Scope: public-market research only. Not financial advice.
+
+schema_version: 1
+updated_at: "2026-06-15"
+
+default_labels:
+  bullish: "Likely bullish for U.S. equities"
+  bearish: "Likely bearish for U.S. equities"
+  mixed: "Mixed / depends on details"
+  neutral: "Neutral / low market impact"
+
+impact_scale:
+  extreme: "Very large short-term market impact; often moves indexes and rates-sensitive assets intraday."
+  very_high: "Large short-term impact; often moves major indexes, sectors, and mega-cap stocks."
+  high: "Meaningful short-term impact; often sector-wide or index-relevant."
+  high_to_extreme: "High to extreme short-term impact depending on escalation severity and affected supply chains."
+  medium_high: "Moderate to high short-term impact; important when combined with macro context or positioning."
+  medium: "Moderate short-term impact; usually sector/theme-specific unless amplified by market conditions."
+
+categories:
+  - id: fomc_rate_decision
+    enabled: true
+    name: "FOMC Rate Decision"
+    group: monetary_policy
+    description: "Federal Reserve policy-rate decisions and official policy statement changes."
+    bullish_conditions:
+      - "Rate hike pause"
+      - "Signals or confirms future rate cuts"
+      - "Acknowledges economic slowdown without triggering recession panic"
+    bearish_conditions:
+      - "Rate hike"
+      - "Higher-for-longer policy guidance"
+      - "Repeated emphasis on inflation-fighting and restrictive policy"
+    sensitive_assets: [QQQ, SMH, NVDA, MSFT, growth_stocks, BTC]
+    short_term_impact: extreme
+    query_keywords: [FOMC, Federal Reserve, rate decision, Fed statement, interest rates, rate cuts, rate hike]
+
+  - id: fed_dot_plot_sep
+    enabled: true
+    name: "Fed Dot Plot / SEP Economic Projections"
+    group: monetary_policy
+    description: "Federal Reserve Summary of Economic Projections, dot plot, inflation, unemployment, and long-run rate forecasts."
+    bullish_conditions:
+      - "More projected rate cuts"
+      - "Lower inflation forecast"
+      - "Mild rise in unemployment without hard-landing signals"
+    bearish_conditions:
+      - "Fewer projected rate cuts"
+      - "Higher inflation forecast"
+      - "Higher long-run interest-rate projections"
+    sensitive_assets: [QQQ, VOO, long_duration_bonds, BTC]
+    short_term_impact: extreme
+    query_keywords: [Fed dot plot, SEP, Summary of Economic Projections, inflation forecast, unemployment forecast, long-run rate]
+
+  - id: powell_press_conference
+    enabled: true
+    name: "Powell Press Conference Tone"
+    group: monetary_policy
+    description: "Market interpretation of Jerome Powell's post-FOMC press conference language and tone."
+    bullish_conditions:
+      - "Mentions progress on inflation"
+      - "Suggests policy is sufficiently restrictive"
+      - "Emphasizes two-sided risks"
+    bearish_conditions:
+      - "Says the Fed lacks confidence on inflation"
+      - "Requires more evidence before easing"
+      - "Does not rule out further tightening"
+    sensitive_assets: [SPY, QQQ, Nasdaq, growth_stocks]
+    short_term_impact: extreme
+    query_keywords: [Jerome Powell, Powell press conference, Fed chair, inflation progress, restrictive policy, two-sided risks]
+
+  - id: cpi_inflation
+    enabled: true
+    name: "CPI Inflation"
+    group: macro_data
+    description: "Consumer Price Index releases, especially core CPI, shelter, services, and wage-sensitive inflation components."
+    bullish_conditions:
+      - "Headline or core CPI below expectations"
+      - "Shelter inflation cools"
+      - "Services inflation cools"
+    bearish_conditions:
+      - "Headline or core CPI above expectations"
+      - "Core services inflation remains sticky"
+      - "Wage-sensitive inflation remains strong"
+    sensitive_assets: [QQQ, SMH, growth_stocks, long_duration_bonds]
+    short_term_impact: extreme
+    query_keywords: [CPI, core CPI, inflation, shelter inflation, services inflation, consumer prices]
+
+  - id: pce_inflation
+    enabled: true
+    name: "PCE Inflation"
+    group: macro_data
+    description: "Personal Consumption Expenditures price index releases, especially core PCE, the Fed's preferred inflation gauge."
+    bullish_conditions:
+      - "Core PCE cools"
+      - "Data supports Fed rate-cut expectations"
+    bearish_conditions:
+      - "Core PCE reaccelerates"
+      - "Data forces a more hawkish Fed path"
+    sensitive_assets: [QQQ, VOO, BTC]
+    short_term_impact: very_high
+    query_keywords: [PCE, core PCE, personal consumption expenditures, Fed preferred inflation gauge]
+
+  - id: ppi_producer_prices
+    enabled: true
+    name: "PPI Producer Prices"
+    group: macro_data
+    description: "Producer Price Index releases and upstream cost pressure for companies."
+    bullish_conditions:
+      - "PPI cools"
+      - "Corporate input-cost pressure declines"
+    bearish_conditions:
+      - "PPI above expectations"
+      - "Producer costs may pass through to CPI or pressure margins"
+    sensitive_assets: [industrials, consumer_stocks, technology_hardware]
+    short_term_impact: medium_high
+    query_keywords: [PPI, Producer Price Index, producer prices, input costs, wholesale inflation]
+
+  - id: nonfarm_payrolls
+    enabled: true
+    name: "Nonfarm Payrolls / NFP"
+    group: macro_data
+    description: "Monthly U.S. labor-market report, including payroll growth, wages, and unemployment context."
+    bullish_conditions:
+      - "Labor market cools moderately"
+      - "Wage growth slows"
+      - "Unemployment rises slightly without recession panic"
+    bearish_conditions:
+      - "Too strong: reduces rate-cut expectations"
+      - "Too weak: triggers recession or hard-landing fears"
+    sensitive_assets: [SPY, QQQ, financials, consumer_stocks, technology]
+    short_term_impact: extreme
+    query_keywords: [nonfarm payrolls, NFP, jobs report, payroll growth, wage growth, unemployment]
+
+  - id: unemployment_claims
+    enabled: true
+    name: "Unemployment Rate / Jobless Claims"
+    group: macro_data
+    description: "Unemployment rate, initial jobless claims, continuing claims, and labor-market deterioration signals."
+    bullish_conditions:
+      - "Labor market weakens mildly"
+      - "Data supports rate cuts without triggering recession fears"
+    bearish_conditions:
+      - "Rapid labor-market deterioration"
+      - "Hard-landing concerns increase"
+    sensitive_assets: [VOO, financials, consumer_stocks, cyclicals]
+    short_term_impact: high
+    query_keywords: [unemployment rate, initial jobless claims, continuing claims, labor market]
+
+  - id: retail_sales_consumption
+    enabled: true
+    name: "Retail Sales / Consumer Data"
+    group: macro_data
+    description: "Retail sales, consumer spending, credit-card data, and consumer-demand indicators."
+    bullish_conditions:
+      - "Consumer spending remains stable but not overheated"
+    bearish_conditions:
+      - "Consumer spending collapses, raising recession concerns"
+      - "Consumer spending is too hot, increasing inflation and rate pressure"
+    sensitive_assets: [AMZN, consumer_stocks, credit_card_companies, banks]
+    short_term_impact: high
+    query_keywords: [retail sales, consumer spending, credit card spending, consumer demand]
+
+  - id: gdp_ism_pmi
+    enabled: true
+    name: "GDP / ISM / PMI"
+    group: macro_data
+    description: "Growth and business-activity indicators, including GDP, ISM, and PMI data."
+    bullish_conditions:
+      - "Soft-landing signals"
+      - "Stable growth with cooling price components"
+    bearish_conditions:
+      - "Growth is too hot and increases rate pressure"
+      - "Growth weakens sharply and raises recession fears"
+    sensitive_assets: [VOO, industrials, financials, semiconductors]
+    short_term_impact: high
+    query_keywords: [GDP, ISM, PMI, manufacturing PMI, services PMI, soft landing, recession]
+
+  - id: treasury_yields_real_rates
+    enabled: true
+    name: "Treasury Yields / 10Y Yield / Real Rates"
+    group: rates_liquidity
+    description: "U.S. Treasury yields, especially the 10-year yield and real rates, which affect equity valuation multiples."
+    bullish_conditions:
+      - "Yields decline in an orderly way"
+      - "Valuation pressure on growth stocks eases"
+    bearish_conditions:
+      - "Yields rise quickly"
+      - "Higher real rates compress growth-stock valuations"
+    sensitive_assets: [QQQ, SMH, NVDA, MSFT, REITs]
+    short_term_impact: extreme
+    query_keywords: [10-year Treasury yield, Treasury yields, real rates, bond yields, rate-sensitive stocks]
+
+  - id: treasury_auctions
+    enabled: true
+    name: "Treasury Auctions"
+    group: rates_liquidity
+    description: "U.S. Treasury auction demand, tails, bid-to-cover ratios, and foreign/institutional participation."
+    bullish_conditions:
+      - "Strong auction demand"
+      - "Small auction tail"
+      - "Healthy foreign or institutional demand"
+      - "Yields decline after auction"
+    bearish_conditions:
+      - "Weak auction demand"
+      - "Large auction tail"
+      - "Yields spike"
+      - "Fiscal supply concerns increase"
+    sensitive_assets: [QQQ, VOO, banks, gold]
+    short_term_impact: medium_high
+    query_keywords: [Treasury auction, bid-to-cover, auction tail, bond supply, Treasury demand]
+
+  - id: dollar_index_dxy
+    enabled: true
+    name: "U.S. Dollar Index / DXY"
+    group: rates_liquidity
+    description: "Dollar strength or weakness and its impact on global liquidity, commodities, and multinational earnings."
+    bullish_conditions:
+      - "Dollar weakens moderately"
+      - "Risk assets and multinational earnings get support"
+    bearish_conditions:
+      - "Dollar strengthens rapidly"
+      - "Global liquidity tightens"
+      - "Overseas revenue translation becomes a headwind"
+    sensitive_assets: [mega_cap_tech, commodities, BTC, emerging_markets]
+    short_term_impact: medium_high
+    query_keywords: [DXY, dollar index, US dollar, FX, global liquidity]
+
+  - id: oil_prices_inventories
+    enabled: true
+    name: "Oil Prices / Crude Inventories"
+    group: commodities_inflation
+    description: "Oil-price moves, crude inventories, and energy-market shocks that affect inflation, consumers, and margins."
+    bullish_conditions:
+      - "Oil prices decline moderately"
+      - "Inflation pressure eases"
+    bearish_conditions:
+      - "Oil prices surge"
+      - "Inflation pressure rises"
+      - "Consumer spending or corporate margins come under pressure"
+    sensitive_assets: [airlines, consumer_stocks, transportation, energy_stocks]
+    short_term_impact: high
+    query_keywords: [oil prices, crude oil, WTI, Brent, crude inventories, EIA inventory]
+
+  - id: geopolitical_risk
+    enabled: true
+    name: "Geopolitical Risk: Middle East / Russia-Ukraine / Taiwan Strait"
+    group: geopolitical
+    description: "Major geopolitical risks affecting energy, shipping, sanctions, chips, or global risk appetite."
+    bullish_conditions:
+      - "Ceasefire"
+      - "Negotiations resume"
+      - "Shipping routes reopen"
+      - "Sanctions ease"
+    bearish_conditions:
+      - "War escalates"
+      - "Strategic straits are blocked"
+      - "Energy supply is disrupted"
+      - "Semiconductor supply chain is disrupted"
+    sensitive_assets: [QQQ, SMH, energy_stocks, gold, defense_stocks]
+    short_term_impact: high_to_extreme
+    query_keywords: [Middle East, Russia Ukraine, Taiwan Strait, sanctions, shipping, energy supply, semiconductor supply chain]
+
+  - id: war_military_escalation
+    enabled: true
+    name: "War / Military Conflict Escalation"
+    group: geopolitical
+    description: "Acute military escalation, cross-border conflict, or great-power involvement that affects risk assets."
+    bullish_conditions:
+      - "Conflict de-escalates quickly"
+      - "Safe-haven flows rotate back into risk assets"
+    bearish_conditions:
+      - "Conflict broadens"
+      - "Major powers become involved"
+      - "Energy or trade routes are disrupted"
+    sensitive_assets: [SPY, QQQ, oil, gold, defense_stocks]
+    short_term_impact: extreme
+    query_keywords: [war escalation, military conflict, missile attack, airstrike, ceasefire, trade routes, energy routes]
+
+  - id: tariffs_trade_export_controls
+    enabled: true
+    name: "Tariffs / Trade War / Export Controls"
+    group: policy_regulation
+    description: "Trade-policy actions, tariffs, export controls, sanctions, and supply-chain restrictions."
+    bullish_conditions:
+      - "Tariffs are reduced"
+      - "Export licenses are expanded"
+      - "Supply-chain tension eases"
+    bearish_conditions:
+      - "New tariffs are announced"
+      - "Chip export restrictions increase"
+      - "Sanctions expand"
+    sensitive_assets: [AAPL, NVDA, SMH, industrials, retail]
+    short_term_impact: high
+    query_keywords: [tariffs, trade war, export controls, chip restrictions, sanctions, supply chain]
+
+  - id: ai_semiconductor_industry
+    enabled: true
+    name: "AI / Semiconductor Industry News"
+    group: technology
+    description: "AI infrastructure, semiconductor supply/demand, cloud capex, chip orders, export restrictions, and inventory cycles."
+    bullish_conditions:
+      - "AI capex expectations rise"
+      - "Cloud customer orders are strong"
+      - "Chip supply improves"
+    bearish_conditions:
+      - "AI demand slows"
+      - "Cloud capex is cut"
+      - "Export restrictions tighten"
+      - "Inventory glut emerges"
+    sensitive_assets: [NVDA, AVGO, SMH, MSFT, GOOGL]
+    short_term_impact: extreme
+    query_keywords: [AI capex, semiconductors, GPU demand, cloud capex, chip supply, export restrictions, inventory]
+
+  - id: mega_cap_tech_earnings
+    enabled: true
+    name: "Mega-Cap Tech Earnings and Guidance"
+    group: earnings
+    description: "Earnings, guidance, cloud growth, AI monetization, ad revenue, and margin trends for mega-cap technology companies."
+    bullish_conditions:
+      - "Revenue or EPS beats expectations"
+      - "Cloud and AI growth is strong"
+      - "Margins remain stable or improve"
+    bearish_conditions:
+      - "Guidance is cut"
+      - "AI costs exceed expectations"
+      - "Advertising or cloud growth slows"
+    sensitive_assets: [QQQ, MSFT, GOOGL, NVDA, AMZN]
+    short_term_impact: extreme
+    query_keywords: [earnings, guidance, cloud growth, AI revenue, margins, EPS beat, revenue beat]
+
+  - id: banking_credit_risk
+    enabled: true
+    name: "Banking / Credit Risk"
+    group: credit_financials
+    description: "Bank stress, credit losses, commercial real estate risk, credit spreads, and financial-system stability."
+    bullish_conditions:
+      - "Credit losses remain stable"
+      - "Net interest margins improve"
+      - "Credit stress appears contained"
+    bearish_conditions:
+      - "Bank failure or crisis"
+      - "Commercial real estate stress worsens"
+      - "Credit spreads widen"
+    sensitive_assets: [financials, IWM, VOO, credit_bonds]
+    short_term_impact: high
+    query_keywords: [bank risk, credit risk, credit spreads, commercial real estate, bank failure, net interest margin]
+
+  - id: government_shutdown_debt_ceiling
+    enabled: true
+    name: "Government Shutdown / Debt Ceiling / Fiscal Conflict"
+    group: fiscal_policy
+    description: "U.S. fiscal-policy conflict, debt-ceiling negotiations, shutdown risk, and sovereign-rating concerns."
+    bullish_conditions:
+      - "Deal is reached quickly"
+      - "Risk premium declines"
+    bearish_conditions:
+      - "Government shutdown begins or extends"
+      - "Credit rating downgrade"
+      - "Debt-ceiling deadlock worsens"
+    sensitive_assets: [SPY, QQQ, Treasuries, dollar, gold]
+    short_term_impact: high
+    query_keywords: [government shutdown, debt ceiling, fiscal conflict, rating downgrade, Treasury default risk]
+
+  - id: regulation_antitrust_litigation
+    enabled: true
+    name: "Regulation / Antitrust / Litigation"
+    group: policy_regulation
+    description: "Regulatory actions, antitrust cases, lawsuits, fines, merger approvals, and business restrictions."
+    bullish_conditions:
+      - "Fine is lighter than expected"
+      - "Business restrictions are less severe than feared"
+      - "Merger or acquisition is approved"
+    bearish_conditions:
+      - "Breakup risk increases"
+      - "Large fine is imposed"
+      - "Business restrictions tighten"
+    sensitive_assets: [GOOGL, META, AMZN, AAPL, MSFT]
+    short_term_impact: medium_high
+    query_keywords: [antitrust, regulation, lawsuit, litigation, fine, merger approval, breakup risk]
+
+  - id: mna_ipo_large_listing
+    enabled: true
+    name: "M&A / IPO / Major Listing Rumors"
+    group: corporate_events
+    description: "Large mergers, acquisitions, IPOs, spin-offs, and major listing rumors that affect risk appetite or sector valuation."
+    bullish_conditions:
+      - "Risk appetite improves"
+      - "Comparable-company valuation multiples expand"
+    bearish_conditions:
+      - "Liquidity is pulled away from existing growth stocks"
+      - "IPO breaks issue price and damages market sentiment"
+    sensitive_assets: [QQQ, growth_stocks, VC_backed_stocks, AI_related_stocks]
+    short_term_impact: medium
+    query_keywords: [IPO, initial public offering, listing, merger, acquisition, M&A, spin-off]
+
+  - id: vix_options_volatility
+    enabled: true
+    name: "VIX / Options Volatility"
+    group: positioning_volatility
+    description: "Volatility-index moves and options-implied volatility as indicators of hedging demand and risk appetite."
+    bullish_conditions:
+      - "VIX declines"
+      - "Hedging demand falls"
+    bearish_conditions:
+      - "VIX rises quickly"
+      - "Risk assets usually face pressure"
+    sensitive_assets: [SPY, QQQ, options, volatility_products]
+    short_term_impact: high
+    query_keywords: [VIX, volatility, implied volatility, options volatility, hedging demand]
+
+  - id: options_expiration_gamma_0dte
+    enabled: true
+    name: "Options Expiration / Gamma / 0DTE"
+    group: positioning_volatility
+    description: "Options positioning, expiration, dealer gamma, and 0DTE flows that may amplify or pin index moves."
+    bullish_conditions:
+      - "Positive gamma environment keeps indexes range-bound or dampens volatility"
+    bearish_conditions:
+      - "Negative gamma environment amplifies downside moves"
+      - "Intraday volatility becomes severe"
+    sensitive_assets: [SPY, QQQ, index_options]
+    short_term_impact: medium_high
+    query_keywords: [options expiration, gamma, dealer gamma, 0DTE, OpEx, index options]
+
+  - id: fund_flows_etf_flows
+    enabled: true
+    name: "Fund Flows / ETF Inflows and Outflows"
+    group: positioning_liquidity
+    description: "ETF flows, fund flows, systematic positioning, CTA exposure, and liquidity-driven market moves."
+    bullish_conditions:
+      - "QQQ, SPY, or technology ETFs see sustained inflows"
+    bearish_conditions:
+      - "Large redemptions occur"
+      - "CTA or quant funds reduce exposure"
+    sensitive_assets: [QQQ, VOO, SMH, IWM]
+    short_term_impact: medium_high
+    query_keywords: [ETF inflows, ETF outflows, fund flows, QQQ flows, SPY flows, CTA positioning, quant deleveraging]
+
+  - id: btc_crypto_risk_appetite
+    enabled: true
+    name: "BTC / Crypto Risk Appetite"
+    group: crypto_liquidity
+    description: "Crypto-market moves as a risk-appetite and liquidity signal, especially BTC, crypto ETFs, exchanges, and stablecoins."
+    bullish_conditions:
+      - "BTC rises"
+      - "Crypto ETF inflows improve"
+      - "Liquidity conditions improve"
+    bearish_conditions:
+      - "BTC crashes"
+      - "Exchange or stablecoin risk emerges"
+      - "Regulatory crackdown intensifies"
+    sensitive_assets: [BTC, COIN, MSTR, QQQ_sentiment]
+    short_term_impact: medium_high
+    query_keywords: [Bitcoin, BTC, crypto ETF, stablecoin, crypto exchange, COIN, MSTR, crypto regulation]
