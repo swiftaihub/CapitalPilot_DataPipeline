@@ -1,227 +1,202 @@
-# CapitalPilot
+# CapitalPilot_DataPipeline
 
-CapitalPilot is a Streamlit cloud-deployable personal investment research terminal.
+CapitalPilot_DataPipeline is the ingestion, transformation, scheduling, and
+observability repo for CapitalPilot research data.
 
-It is designed for personal research only. It is not financial advice, does not automate trading, does not connect to brokerage APIs, and does not produce deterministic buy/sell recommendations.
+It is for personal research only. It is not financial advice, does not automate
+trading, does not connect to brokerage APIs, and does not produce deterministic
+buy/sell recommendations.
 
-## Phase 1 Scope
+## Three-Repo Boundary
 
-Phase 1 implements the foundation:
+CapitalPilot is split into three repos:
 
-- Project scaffold for Streamlit, Python ingestion jobs, DuckDB/MotherDuck, dbt, tests, docs, and GitHub Actions
-- Local DuckDB development database at `data/capitalpilot.duckdb`
-- MotherDuck production target at `md:capitalpilot`
-- Raw macro observations from FRED
-- Raw price history from yfinance
-- dbt staging, intermediate, and mart models
-- Macro Monitor MVP
-- Valuation Engine MVP with price and market-cap data
-- SEC Filing Agent placeholder page
-- SEC service-layer placeholder functions
-- Future MCP integration design documentation
+- `CapitalPilot_DataPipeline`: source ingestion, raw/staging/intermediate/mart
+  schemas, dbt transformations, scheduled refresh jobs, AI queue contracts, AI
+  output table schemas, and internal Streamlit observability.
+- `CapitalPilot_AI`: LLM orchestration, summarization, prompt versions,
+  AI-as-tool refresh logic, and any future MCP/tool-calling implementation.
+- `CapitalPilot_UI`: final user-facing frontend that reads marts and AI summary
+  tables.
 
-## Intentionally Placeholder
+This repo does not host an interactive MCP research agent or end-user AI chat.
+`CapitalPilot_AI` reads queue marts from this repo, writes structured summaries
+to `ai.*` tables, and `CapitalPilot_UI` displays those outputs.
 
-These are planned for Phase 2 and are not implemented in Phase 1:
+## Phase 2 Capabilities
 
-- Full SEC EDGAR ingestion
-- SEC company facts ingestion
-- SEC filing text extraction
-- Filing section parsing
-- Risk factor diffing
-- MCP server
-- Autonomous AI tool calling
-- Live LLM execution against SEC data
+- FRED macro ingestion and yfinance price ingestion from Phase 1.
+- SEC `10-K`, `10-Q`, and `8-K` metadata ingestion from EDGAR, plus optional
+  filing document download.
+- Configurable daily news metadata ingestion with manual CSV and optional Alpha
+  Vantage provider support.
+- Public political/high-official disclosure schema with manual CSV ingestion and
+  documented Senate, House, and OGE source scaffolds.
+- Long-term accumulation research indicators.
+- Options math and optional option-chain schema/provider.
+- Daily technical indicators and market summary marts.
+- Ops metadata tables for runs, tasks, errors, and freshness checks.
+- Internal Streamlit pipeline dashboard.
 
-## Architecture
+## AI Contracts
 
-```text
-Python ingestion jobs
-        |
-MotherDuck raw tables
-        |
-dbt transformations
-        |
-MotherDuck staging / intermediate / marts
-        |
-Streamlit Cloud reads marts tables
-        |
-Future Phase 2: MCP server exposes read-only research tools to AI agent
-```
+Queue marts produced by dbt:
 
-Local development uses DuckDB at `data/capitalpilot.duckdb`. Production uses MotherDuck with `MOTHERDUCK_TOKEN`.
+- `marts.mart_sec_ai_summary_queue`
+- `marts.mart_news_ai_summary_queue`
 
-## Data Stack
+AI output tables created by DataPipeline and written by `CapitalPilot_AI`:
 
-- Python 3.11+
-- Streamlit
-- pandas / numpy
-- plotly
-- requests
-- pydantic
-- PyYAML
-- duckdb
-- dbt-core
-- dbt-duckdb
-- yfinance
-- python-dotenv
-- pytest
+- `ai.sec_filing_summaries`
+- `ai.news_summaries`
 
-No MCP dependencies are included in Phase 1.
+Summary labels should stay research-oriented, such as `bullish`, `bearish`,
+`mixed`, `neutral`, and `unknown`. They must not become deterministic trading
+instructions.
+
+## Data Sources and Limits
+
+- SEC: free EDGAR endpoints using `SEC_USER_AGENT`; fair-access retry, timeout,
+  and rate limiting are enforced in `src/sec_client.py`.
+- Macro: FRED API through `FRED_API_KEY`.
+- Prices: yfinance daily history.
+- News: manual CSV works offline; Alpha Vantage `NEWS_SENTIMENT` is optional.
+  Future documented options include Finnhub, Benzinga, GDELT, and permitted RSS.
+- Political disclosures: manual CSV ingestion works now. Senate, House, and OGE
+  sources often involve PDFs, search forms, and delayed range disclosures, so
+  exact holdings must not be inferred. House Periodic Transaction Reports can be
+  ingested automatically from the official House Clerk yearly XML index and PTR
+  PDFs.
+- Options: Black-Scholes, Greeks, payoff, and vertical-spread calculators are
+  deterministic. yfinance option-chain ingestion is optional and disabled by
+  default.
 
 ## Local Setup
 
-Python 3.11 is recommended and is declared in `runtime.txt` for Streamlit Cloud. The dbt dependency stack may lag the newest CPython releases.
-
-Check your local interpreter before creating the virtual environment:
-
-```bash
-python --version
-```
-
-On Windows, `py -0p` lists installed Python versions. If it only shows Python 3.14, install Python 3.11 and recreate `.venv`; a virtual environment created from Python 3.14 will still fail before dbt can parse the project.
+Python 3.11 is recommended and declared in `runtime.txt`.
 
 ```bash
 pip install -r requirements.txt
-
-python jobs/refresh_macro.py --target local
-python jobs/refresh_prices.py --target local
-python jobs/run_pipeline.py --target local --run-dbt
-
 cp dbt/profiles.yml.example dbt/profiles.yml
-cd dbt
-dbt build --profiles-dir . --target dev
-cd ..
-
+python jobs/run_pipeline.py --target local --run-dbt
 streamlit run app.py
 ```
 
-`refresh_macro.py` requires `FRED_API_KEY`. `refresh_prices.py` uses yfinance and does not require an API key.
+Individual jobs:
 
-## MotherDuck Setup
+```bash
+python jobs/refresh_macro.py --target local
+python jobs/refresh_prices.py --target local
+python jobs/refresh_sec_filings.py --target local --forms 10-K,10-Q,8-K
+python jobs/refresh_news.py --target local --provider manual
+python jobs/refresh_political_trades.py --target local --source manual --manual-file tests/fixtures/political_transactions_sample.csv
+python jobs/refresh_political_trades.py --target local --source house --days-back 120 --max-reports 5
+python jobs/refresh_options.py --target local --force
+```
 
-Set secrets in your shell or GitHub Actions environment:
+Optional jobs skip gracefully in `jobs/run_pipeline.py` when source secrets or
+providers are unavailable. Direct SEC refresh requires a valid `SEC_USER_AGENT`.
+The House official-trades source downloads public PTR PDFs, so start with a
+small `--max-reports` value before widening the date range.
+
+## MotherDuck
 
 ```bash
 export CAPITALPILOT_DB_TARGET=motherduck
 export MOTHERDUCK_TOKEN=your_token
 export FRED_API_KEY=your_fred_key
+export SEC_USER_AGENT="CapitalPilot contact@yourdomain.com"
 
-python jobs/refresh_macro.py --target motherduck
-python jobs/refresh_prices.py --target motherduck
-
-cd dbt
-cp profiles.yml.example profiles.yml
-dbt build --profiles-dir . --target prod
+python jobs/run_pipeline.py --target motherduck --run-dbt
 ```
 
-## Required Secrets
+## Secrets
+
+Required for production MotherDuck:
 
 - `MOTHERDUCK_TOKEN`
-- `FRED_API_KEY`
 
-## Future Phase 2 Secrets
+Required for specific source jobs:
 
-- `SEC_USER_AGENT`
-- `OPENAI_API_KEY`
+- `FRED_API_KEY` for macro refresh.
+- `SEC_USER_AGENT` for SEC refresh.
 
-These future secrets are documented but not required for Phase 1.
+Optional:
+
+- `ALPHA_VANTAGE_API_KEY` for Alpha Vantage news.
+- Other future news provider keys.
+
+LLM keys belong in `CapitalPilot_AI`, not this repo.
 
 ## GitHub Actions
 
-Two workflows are included:
+`.github/workflows/refresh_capitalpilot.yml` runs Python 3.11, installs
+dependencies, validates dbt, runs:
 
-- `.github/workflows/refresh_capitalpilot.yml` refreshes macro and price data, then runs dbt against MotherDuck.
-- `.github/workflows/dbt_debug.yml` validates the dbt connection and builds selected models.
+```bash
+python jobs/run_pipeline.py --target motherduck --run-dbt
+```
 
-GitHub Actions cron uses UTC. The scheduled refresh runs at `22:30 UTC` Monday through Friday, roughly `6:30 PM New York time` during US daylight saving time.
-
-Add these GitHub repository secrets before enabling scheduled production refresh:
+Then it generates dbt docs and uploads dbt artifacts. Configure these GitHub
+secrets as applicable:
 
 - `MOTHERDUCK_TOKEN`
 - `FRED_API_KEY`
+- `SEC_USER_AGENT`
+- `ALPHA_VANTAGE_API_KEY`
 
-SEC jobs are intentionally not included in Phase 1.
+## Internal Dashboard
 
-## Streamlit Cloud Deployment
+`streamlit run app.py` opens the internal DataPipeline observability console. It
+shows:
 
-1. Push the repository to GitHub.
-2. Create a Streamlit Community Cloud app pointing to `app.py`.
-3. Add Streamlit secrets from `.streamlit/secrets.toml.example`.
-4. Use `MOTHERDUCK_TOKEN` in Streamlit secrets to read production marts from MotherDuck.
+- database target and connection status
+- latest pipeline/task run status
+- latest refresh/freshness by domain
+- row counts by raw, mart, and AI contract tables
+- recent errors
+- recent records by domain
+- AI summary queue counts
 
-If `MOTHERDUCK_TOKEN` is not available, Streamlit falls back to local DuckDB if `data/capitalpilot.duckdb` exists.
+The Streamlit app is not the final user-facing UI.
 
-## Dashboards
+## dbt
 
-### Macro Monitor
+Local:
 
-Reads from `marts.mart_macro_dashboard`.
+```bash
+cd dbt
+dbt build --profiles-dir . --target dev
+```
 
-Includes rates, inflation, unemployment, dollar index, VIX, and a deterministic macro regime score. The score is a research signal only.
+Production:
 
-### Valuation Engine
+```bash
+cd dbt
+dbt build --profiles-dir . --target prod
+```
 
-Reads from `marts.mart_valuation_dashboard`.
+Schemas:
 
-Phase 1 includes latest price, market cap, volume, watchlist table, and price history. Fundamental metrics such as revenue, earnings, FCF, PE, PS, and FCF yield require SEC company facts and will be added in Phase 2.
+- `raw`
+- `staging`
+- `intermediate`
+- `marts`
+- `ai`
+- `ops`
 
-### SEC Filing Agent
-
-Phase 1 includes a professional placeholder dashboard with planned capabilities, example AI queries, non-functional prompt UI, and future MCP tool contract preview.
-
-The placeholder includes these Phase 2 target queries:
-
-- 帮我查一下 NVDA 最近三次 10-Q 里 risk factors 有什么变化
-- 找出 watchlist 里最近 30 天有 8-K 的公司
-- 比较 MRVL 和 AVGO 的 revenue growth、FCF yield 和最近 filing 风险
-- 帮我基于 filings 和 valuation 生成一份本周 research brief
-
-## Future MCP Section
-
-Phase 2 will add a read-only MCP server exposing tools such as:
-
-- `search_sec_filings`
-- `get_recent_10q_risk_factor_changes`
-- `find_watchlist_8k_filings`
-- `compare_companies_research_snapshot`
-- `generate_weekly_research_brief`
-- `get_macro_snapshot`
-- `get_valuation_snapshot`
-
-Guardrails:
-
-- Read-only only
-- No trading
-- No portfolio execution
-- No database writes from AI agent
-- No deterministic buy/sell recommendations
-- Must say insufficient data if data is missing
-- Must distinguish source data from interpretation
-
-## SEC Filing Agent Phase 2 Roadmap
-
-1. SEC EDGAR ingestion
-2. Ticker-to-CIK mapping
-3. Recent filing metadata
-4. Company facts ingestion
-5. Filing document download
-6. Filing section parser
-7. Risk factor extraction
-8. Risk factor diffing
-9. Thesis impact analysis
-10. dbt SEC marts
-11. MCP server
-12. AI chat UI integration
-
-## Testing
+## Tests
 
 ```bash
 pytest
 ```
 
-Tests do not require live API calls.
+Tests use fixtures and mocks; they do not require live external API calls.
 
-## Disclaimer
+## Disclaimers
 
-CapitalPilot is for personal research only. It is not investment advice. It does not automate trading, execute portfolio actions, connect to brokerage APIs, or produce deterministic buy/sell recommendations.
+CapitalPilot is personal research software only. It is not investment advice.
+It does not automate trading, execute orders, connect to brokerage accounts, or
+produce deterministic buy/sell recommendations. Political disclosures may be
+delayed, incomplete, and range-based. News sentiment and AI summaries are model
+interpretations and may be wrong.

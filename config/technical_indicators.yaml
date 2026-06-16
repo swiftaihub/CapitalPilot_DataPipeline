@@ -1,0 +1,24 @@
+schema_version: 1
+
+indicators:
+  sma_windows: [20, 50, 100, 200]
+  ema_windows: [12, 26]
+  rsi_window: 14
+  bollinger_window: 20
+  bollinger_stddevs: 2
+  atr_window: 14
+  realized_vol_windows: [20, 60]
+  volume_average_window: 20
+  support_resistance_window: 60
+
+market_etfs:
+  - SPY
+  - QQQ
+  - DIA
+  - IWM
+  - SMH
+
+labels:
+  trend: [uptrend, downtrend, consolidation, insufficient_data]
+  state: [breakout, breakdown, overbought, oversold, neutral]
+

@@ -16,6 +16,8 @@ jobs:
       CAPITALPILOT_DB_TARGET: motherduck
       MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -48,18 +50,9 @@ jobs:
         run: |
           dbt debug --profiles-dir . --target prod
 
-      - name: Refresh macro raw data
+      - name: Run orchestrated data pipeline
         run: |
-          python jobs/refresh_macro.py --target motherduck
-
-      - name: Refresh price raw data
-        run: |
-          python jobs/refresh_prices.py --target motherduck
-
-      - name: Run dbt build
-        working-directory: dbt
-        run: |
-          dbt build --profiles-dir . --target prod
+          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source all --political-max-reports 20
 
       - name: Generate dbt docs
         working-directory: dbt

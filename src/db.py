@@ -58,11 +58,13 @@ def get_connection(
     return duckdb.connect(str(path), read_only=read_only)
 
 
-def init_raw_schema(target: str | None = None) -> None:
-    """Create Phase 1 raw schemas and raw tables if they do not exist."""
+def init_database_schemas(target: str | None = None) -> None:
+    """Create all schemas and contract tables used by the data pipeline."""
     conn = get_connection(target)
     try:
-        conn.execute("create schema if not exists raw")
+        for schema in ["raw", "staging", "intermediate", "marts", "ai", "ops"]:
+            conn.execute(f"create schema if not exists {schema}")
+
         conn.execute(
             """
             create table if not exists raw.raw_macro_observations (
@@ -91,8 +93,273 @@ def init_raw_schema(target: str | None = None) -> None:
             )
             """
         )
+        conn.execute(
+            """
+            create table if not exists raw.raw_sec_company_tickers (
+                ticker varchar,
+                cik varchar,
+                title varchar,
+                source varchar,
+                raw_payload_json varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_sec_filings (
+                ticker varchar,
+                cik varchar,
+                accession_number varchar,
+                form_type varchar,
+                filing_date date,
+                report_date date,
+                acceptance_datetime timestamp,
+                primary_document varchar,
+                filing_detail_url varchar,
+                document_url varchar,
+                document_text varchar,
+                source varchar,
+                raw_payload_json varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute("alter table raw.raw_sec_filings add column if not exists document_text varchar")
+        conn.execute(
+            """
+            create table if not exists raw.raw_sec_filing_documents (
+                ticker varchar,
+                cik varchar,
+                accession_number varchar,
+                form_type varchar,
+                filing_date date,
+                primary_document varchar,
+                document_url varchar,
+                document_text varchar,
+                content_type varchar,
+                download_status varchar,
+                error_message varchar,
+                source varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_sec_companyfacts (
+                ticker varchar,
+                cik varchar,
+                source varchar,
+                raw_payload_json varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_news_articles (
+                article_id varchar,
+                source_provider varchar,
+                publisher varchar,
+                title varchar,
+                url varchar,
+                published_at timestamp,
+                category varchar,
+                query varchar,
+                related_tickers_json varchar,
+                raw_summary varchar,
+                raw_sentiment varchar,
+                raw_payload_json varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_political_disclosure_reports (
+                report_id varchar,
+                official_name varchar,
+                role varchar,
+                branch varchar,
+                chamber varchar,
+                party varchar,
+                state varchar,
+                report_type varchar,
+                report_date date,
+                filing_date date,
+                source_url varchar,
+                source_pdf_url varchar,
+                raw_payload_json varchar,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_political_transactions (
+                transaction_id varchar,
+                official_name varchar,
+                role varchar,
+                branch varchar,
+                chamber varchar,
+                party varchar,
+                state varchar,
+                ticker varchar,
+                asset_name varchar,
+                asset_type varchar,
+                transaction_type varchar,
+                transaction_date date,
+                notification_date date,
+                filing_date date,
+                amount_min double,
+                amount_max double,
+                amount_text varchar,
+                owner varchar,
+                source_report_id varchar,
+                source_url varchar,
+                source_pdf_url varchar,
+                raw_payload_json varchar,
+                confidence_score double,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists raw.raw_options_chain (
+                ticker varchar,
+                as_of_date date,
+                expiration_date date,
+                option_type varchar,
+                strike double,
+                last_price double,
+                bid double,
+                ask double,
+                mid double,
+                volume double,
+                open_interest double,
+                implied_volatility double,
+                in_the_money boolean,
+                source varchar,
+                updated_at timestamp
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            create table if not exists ai.sec_filing_summaries (
+                summary_id varchar,
+                ticker varchar,
+                cik varchar,
+                accession_number varchar,
+                form_type varchar,
+                filing_date date,
+                summary_type varchar,
+                summary varchar,
+                key_points_json varchar,
+                risk_factors_json varchar,
+                business_impact varchar,
+                market_impact_label varchar,
+                market_impact_score double,
+                confidence_score double,
+                model_name varchar,
+                prompt_version varchar,
+                source_url varchar,
+                created_at timestamp,
+                updated_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists ai.news_summaries (
+                summary_id varchar,
+                summary_date date,
+                category varchar,
+                ticker varchar,
+                headline varchar,
+                summary varchar,
+                bull_bear_label varchar,
+                bull_bear_score double,
+                reasoning_short varchar,
+                affected_assets_json varchar,
+                source_article_ids_json varchar,
+                model_name varchar,
+                prompt_version varchar,
+                created_at timestamp,
+                updated_at timestamp
+            )
+            """
+        )
+
+        conn.execute(
+            """
+            create table if not exists ops.pipeline_runs (
+                run_id varchar,
+                pipeline_name varchar,
+                target varchar,
+                status varchar,
+                started_at timestamp,
+                finished_at timestamp,
+                metadata_json varchar
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists ops.pipeline_task_runs (
+                task_run_id varchar,
+                run_id varchar,
+                task_name varchar,
+                status varchar,
+                started_at timestamp,
+                finished_at timestamp,
+                row_count bigint,
+                metadata_json varchar,
+                error_message varchar
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists ops.pipeline_errors (
+                error_id varchar,
+                run_id varchar,
+                task_name varchar,
+                error_type varchar,
+                error_message varchar,
+                error_context_json varchar,
+                created_at timestamp
+            )
+            """
+        )
+        conn.execute(
+            """
+            create table if not exists ops.data_freshness_checks (
+                check_id varchar,
+                domain varchar,
+                table_name varchar,
+                max_timestamp timestamp,
+                row_count bigint,
+                status varchar,
+                checked_at timestamp,
+                details_json varchar
+            )
+            """
+        )
     finally:
         conn.close()
+
+
+def init_raw_schema(target: str | None = None) -> None:
+    """Backward-compatible wrapper for Phase 1 callers."""
+    init_database_schemas(target)
+
+
+def _utc_now_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _normalize_columns(df: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame:
@@ -102,8 +369,24 @@ def _normalize_columns(df: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame
             out[column] = None
     out = out[list(columns)]
     if "updated_at" in out.columns:
-        out["updated_at"] = out["updated_at"].fillna(datetime.now(timezone.utc).replace(tzinfo=None))
+        out["updated_at"] = out["updated_at"].fillna(_utc_now_naive())
     return out
+
+
+def _coerce_date(prepared: pd.DataFrame, column: str) -> None:
+    if column in prepared.columns:
+        prepared[column] = pd.to_datetime(prepared[column], errors="coerce").dt.date
+
+
+def _coerce_timestamp(prepared: pd.DataFrame, column: str) -> None:
+    if column in prepared.columns:
+        prepared[column] = pd.to_datetime(prepared[column], errors="coerce", utc=True).dt.tz_convert(None)
+
+
+def _coerce_numeric(prepared: pd.DataFrame, columns: Iterable[str]) -> None:
+    for column in columns:
+        if column in prepared.columns:
+            prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
 
 
 def _delete_then_insert(
@@ -114,17 +397,16 @@ def _delete_then_insert(
     key_columns: list[str],
     columns: list[str],
 ) -> int:
+    init_database_schemas(target)
     if df.empty:
-        init_raw_schema(target)
         return 0
 
-    init_raw_schema(target)
     normalized = _normalize_columns(df, columns)
     conn = get_connection(target)
     try:
         conn.register("incoming_rows", normalized)
         join_predicate = " and ".join(
-            f"existing.{column} = incoming_rows.{column}" for column in key_columns
+            f"existing.{column} is not distinct from incoming_rows.{column}" for column in key_columns
         )
         conn.execute(f"delete from {table_name} as existing using incoming_rows where {join_predicate}")
         column_list = ", ".join(columns)
@@ -138,13 +420,31 @@ def _delete_then_insert(
         conn.close()
 
 
+def upsert_dataframe(
+    df: pd.DataFrame,
+    *,
+    target: str | None,
+    table_name: str,
+    key_columns: list[str],
+    columns: list[str],
+) -> int:
+    """Idempotently upsert a dataframe into a known table."""
+    return _delete_then_insert(
+        df,
+        target=target,
+        table_name=table_name,
+        key_columns=key_columns,
+        columns=columns,
+    )
+
+
 def upsert_raw_macro_observations(df: pd.DataFrame, target: str | None = None) -> int:
     """Idempotently upsert FRED macro observations into raw.raw_macro_observations."""
     prepared = df.copy()
     if not prepared.empty:
         prepared["series_id"] = prepared["series_id"].astype(str).str.upper().str.strip()
-        prepared["date"] = pd.to_datetime(prepared["date"]).dt.date
-        prepared["value"] = pd.to_numeric(prepared["value"], errors="coerce")
+        _coerce_date(prepared, "date")
+        _coerce_numeric(prepared, ["value"])
         prepared["source"] = prepared.get("source", "FRED")
     return _delete_then_insert(
         prepared,
@@ -160,10 +460,8 @@ def upsert_raw_prices(df: pd.DataFrame, target: str | None = None) -> int:
     prepared = df.copy()
     if not prepared.empty:
         prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
-        prepared["date"] = pd.to_datetime(prepared["date"]).dt.date
-        for column in ["open", "high", "low", "close", "adj_close", "volume", "market_cap"]:
-            if column in prepared.columns:
-                prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
+        _coerce_date(prepared, "date")
+        _coerce_numeric(prepared, ["open", "high", "low", "close", "adj_close", "volume", "market_cap"])
         prepared["source"] = prepared.get("source", "yfinance")
     return _delete_then_insert(
         prepared,
@@ -184,6 +482,273 @@ def upsert_raw_prices(df: pd.DataFrame, target: str | None = None) -> int:
             "updated_at",
         ],
     )
+
+
+def upsert_raw_sec_company_tickers(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
+        prepared["cik"] = prepared["cik"].astype(str).str.zfill(10)
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_sec_company_tickers",
+        key_columns=["ticker"],
+        columns=["ticker", "cik", "title", "source", "raw_payload_json", "updated_at"],
+    )
+
+
+def upsert_raw_sec_filings(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
+        prepared["cik"] = prepared["cik"].astype(str).str.zfill(10)
+        prepared["form_type"] = prepared["form_type"].astype(str).str.upper().str.strip()
+        _coerce_date(prepared, "filing_date")
+        _coerce_date(prepared, "report_date")
+        _coerce_timestamp(prepared, "acceptance_datetime")
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_sec_filings",
+        key_columns=["accession_number"],
+        columns=[
+            "ticker",
+            "cik",
+            "accession_number",
+            "form_type",
+            "filing_date",
+            "report_date",
+            "acceptance_datetime",
+            "primary_document",
+            "filing_detail_url",
+            "document_url",
+            "document_text",
+            "source",
+            "raw_payload_json",
+            "updated_at",
+        ],
+    )
+
+
+def upsert_raw_sec_filing_documents(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
+        prepared["cik"] = prepared["cik"].astype(str).str.zfill(10)
+        _coerce_date(prepared, "filing_date")
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_sec_filing_documents",
+        key_columns=["accession_number", "document_url"],
+        columns=[
+            "ticker",
+            "cik",
+            "accession_number",
+            "form_type",
+            "filing_date",
+            "primary_document",
+            "document_url",
+            "document_text",
+            "content_type",
+            "download_status",
+            "error_message",
+            "source",
+            "updated_at",
+        ],
+    )
+
+
+def upsert_raw_sec_companyfacts(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
+        prepared["cik"] = prepared["cik"].astype(str).str.zfill(10)
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_sec_companyfacts",
+        key_columns=["cik"],
+        columns=["ticker", "cik", "source", "raw_payload_json", "updated_at"],
+    )
+
+
+def upsert_raw_news_articles(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        _coerce_timestamp(prepared, "published_at")
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_news_articles",
+        key_columns=["article_id"],
+        columns=[
+            "article_id",
+            "source_provider",
+            "publisher",
+            "title",
+            "url",
+            "published_at",
+            "category",
+            "query",
+            "related_tickers_json",
+            "raw_summary",
+            "raw_sentiment",
+            "raw_payload_json",
+            "updated_at",
+        ],
+    )
+
+
+def upsert_raw_political_disclosure_reports(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        _coerce_date(prepared, "report_date")
+        _coerce_date(prepared, "filing_date")
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_political_disclosure_reports",
+        key_columns=["report_id"],
+        columns=[
+            "report_id",
+            "official_name",
+            "role",
+            "branch",
+            "chamber",
+            "party",
+            "state",
+            "report_type",
+            "report_date",
+            "filing_date",
+            "source_url",
+            "source_pdf_url",
+            "raw_payload_json",
+            "updated_at",
+        ],
+    )
+
+
+def upsert_raw_political_transactions(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        if "ticker" in prepared.columns:
+            prepared["ticker"] = prepared["ticker"].map(
+                lambda value: None
+                if value is None or pd.isna(value) or str(value).strip().upper() in {"", "NAN", "NONE", "NULL"}
+                else str(value).upper().strip()
+            )
+        for column in ["transaction_date", "notification_date", "filing_date"]:
+            _coerce_date(prepared, column)
+        _coerce_numeric(prepared, ["amount_min", "amount_max", "confidence_score"])
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_political_transactions",
+        key_columns=["transaction_id"],
+        columns=[
+            "transaction_id",
+            "official_name",
+            "role",
+            "branch",
+            "chamber",
+            "party",
+            "state",
+            "ticker",
+            "asset_name",
+            "asset_type",
+            "transaction_type",
+            "transaction_date",
+            "notification_date",
+            "filing_date",
+            "amount_min",
+            "amount_max",
+            "amount_text",
+            "owner",
+            "source_report_id",
+            "source_url",
+            "source_pdf_url",
+            "raw_payload_json",
+            "confidence_score",
+            "updated_at",
+        ],
+    )
+
+
+def upsert_raw_options_chain(df: pd.DataFrame, target: str | None = None) -> int:
+    prepared = df.copy()
+    if not prepared.empty:
+        prepared["ticker"] = prepared["ticker"].astype(str).str.upper().str.strip()
+        prepared["option_type"] = prepared["option_type"].astype(str).str.lower().str.strip()
+        _coerce_date(prepared, "as_of_date")
+        _coerce_date(prepared, "expiration_date")
+        _coerce_numeric(
+            prepared,
+            [
+                "strike",
+                "last_price",
+                "bid",
+                "ask",
+                "mid",
+                "volume",
+                "open_interest",
+                "implied_volatility",
+            ],
+        )
+    return _delete_then_insert(
+        prepared,
+        target=target,
+        table_name="raw.raw_options_chain",
+        key_columns=["ticker", "as_of_date", "expiration_date", "option_type", "strike"],
+        columns=[
+            "ticker",
+            "as_of_date",
+            "expiration_date",
+            "option_type",
+            "strike",
+            "last_price",
+            "bid",
+            "ask",
+            "mid",
+            "volume",
+            "open_interest",
+            "implied_volatility",
+            "in_the_money",
+            "source",
+            "updated_at",
+        ],
+    )
+
+
+def table_exists(table_name: str, target: str | None = None) -> bool:
+    """Return whether a fully qualified table exists."""
+    conn = get_connection(target)
+    try:
+        schema, name = table_name.split(".", 1)
+        rows = conn.execute(
+            """
+            select count(*)
+            from information_schema.tables
+            where table_schema = ?
+              and table_name = ?
+            """,
+            [schema, name],
+        ).fetchone()
+        return bool(rows and rows[0])
+    finally:
+        conn.close()
+
+
+def get_table_row_count(table_name: str, target: str | None = None) -> int | None:
+    """Return a table row count, or None if the table cannot be read."""
+    conn = get_connection(target)
+    try:
+        return int(conn.execute(f"select count(*) from {table_name}").fetchone()[0])
+    except Exception:
+        return None
+    finally:
+        conn.close()
 
 
 try:

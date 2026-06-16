@@ -52,8 +52,43 @@ def load_valuation_config() -> dict[str, Any]:
     return load_yaml_config("valuation_config.yaml")
 
 
+def load_sec_forms_config() -> dict[str, Any]:
+    """Return SEC form ingestion configuration."""
+    return load_yaml_config("sec_forms.yaml")
+
+
+def load_news_sources_config() -> dict[str, Any]:
+    """Return news source provider configuration."""
+    return load_yaml_config("news_sources.yaml")
+
+
+def load_news_categories_config() -> dict[str, Any]:
+    """Return market-news category configuration."""
+    return load_yaml_config("news_categories.yaml")
+
+
+def load_officials_watchlist_config() -> dict[str, Any]:
+    """Return public-official disclosure watchlist configuration."""
+    return load_yaml_config("officials_watchlist.yaml")
+
+
+def load_accumulation_rules_config() -> dict[str, Any]:
+    """Return deterministic accumulation signal configuration."""
+    return load_yaml_config("accumulation_rules.yaml")
+
+
+def load_options_config() -> dict[str, Any]:
+    """Return options analytics configuration."""
+    return load_yaml_config("options_config.yaml")
+
+
+def load_technical_indicators_config() -> dict[str, Any]:
+    """Return technical indicator configuration."""
+    return load_yaml_config("technical_indicators.yaml")
+
+
 def load_future_mcp_tools() -> dict[str, Any]:
-    """Return planned Phase 2 MCP tool contract configuration."""
+    """Return deprecated Phase 1 MCP planning configuration."""
     return load_yaml_config("future_mcp_tools.yaml")
 
 

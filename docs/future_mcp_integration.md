@@ -1,53 +1,41 @@
-# Future MCP Integration
+# AI Boundary and Data Contracts
 
-CapitalPilot Phase 2 will add a read-only MCP server.
+CapitalPilot_DataPipeline no longer plans to host an interactive MCP research
+agent or end-user AI chat.
 
-The MCP server will expose research tools to an AI agent.
+The production split is:
 
-The AI agent will be able to answer questions such as:
+- `CapitalPilot_DataPipeline`: source ingestion, raw/staging/intermediate/mart
+  schemas, dbt transformations, scheduled refresh jobs, AI queue tables, AI
+  output table schemas, and internal pipeline observability.
+- `CapitalPilot_AI`: LLM orchestration, summarization prompts, tool-calling or
+  MCP-style orchestration if needed, and writes to `ai.*` output tables.
+- `CapitalPilot_UI`: user-facing frontend that reads marts and AI summaries.
 
-- 帮我查一下 NVDA 最近三次 10-Q 里 risk factors 有什么变化
-- 找出 watchlist 里最近 30 天有 8-K 的公司
-- 比较 MRVL 和 AVGO 的 revenue growth、FCF yield 和最近 filing 风险
-- 帮我基于 filings 和 valuation 生成一份本周 research brief
+## DataPipeline AI Contracts
 
-## Planned Architecture
+DataPipeline produces queue marts:
 
-```text
-Streamlit AI Chat UI
-        |
-AI Agent
-        |
-MCP Client
-        |
-CapitalPilot MCP Server
-        |
-Read-only tools
-        |
-MotherDuck marts
-```
+- `marts.mart_sec_ai_summary_queue`
+- `marts.mart_news_ai_summary_queue`
 
-## Planned MCP Tools
+DataPipeline owns the destination table schemas:
 
-- `search_sec_filings`
-- `get_recent_10q_risk_factor_changes`
-- `find_watchlist_8k_filings`
-- `compare_companies_research_snapshot`
-- `generate_weekly_research_brief`
-- `get_macro_snapshot`
-- `get_valuation_snapshot`
+- `ai.sec_filing_summaries`
+- `ai.news_summaries`
+
+`CapitalPilot_AI` may read queue rows, generate structured summaries, and write
+results back into those `ai.*` tables. DataPipeline should not perform live
+interactive chat, user-facing LLM research, brokerage actions, or portfolio
+execution.
 
 ## Guardrails
 
-- Read-only only
-- No trading
-- No portfolio execution
-- No database writes from AI agent
-- No deterministic buy/sell recommendations
-- Must say insufficient data if data is missing
-- Must distinguish source data from interpretation
-
-## Phase 1 Status
-
-No MCP server, MCP dependencies, autonomous tool calling, or live LLM execution is implemented in Phase 1.
-
+- No deterministic buy/sell recommendations.
+- No trading or brokerage integration.
+- Preserve source URLs, raw payloads, timestamps, and uncertainty.
+- Political disclosures may be delayed, incomplete, and range-based.
+- House PTR ingestion uses the official House Clerk XML index and public PTR
+  PDFs. Senate eFD and OGE automation should be added only when source access is
+  reliable and terms-compatible.
+- News sentiment and AI summaries are interpretations and may be wrong.
