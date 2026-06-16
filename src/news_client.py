@@ -239,25 +239,19 @@ class AlphaVantageNewsProvider:
         if not key:
             raise MissingProviderSecret("ALPHA_VANTAGE_API_KEY is not set; skipping Alpha Vantage news.")
         records: list[dict[str, Any]] = []
-        for category in categories:
-            query_keywords = category.get("query_keywords") or [category.get("name") or category.get("id")]
-            query = " OR ".join(str(item) for item in query_keywords if item)
+        if tickers:
             params = {
                 "function": "NEWS_SENTIMENT",
                 "apikey": key,
-                "limit": str(limit_per_category),
+                "tickers": ",".join(tickers),
+                "limit": str(min(max(limit_per_category * max(len(categories), 1), limit_per_category), 1000)),
                 "time_from": start_date.strftime("%Y%m%dT0000"),
                 "time_to": (end_date + timedelta(days=1)).strftime("%Y%m%dT0000"),
+                "sort": "LATEST",
             }
-            if tickers:
-                params["tickers"] = ",".join(tickers)
-            elif query:
-                params["topics"] = query_keywords[0] if query_keywords else category.get("id")
-
-            response = requests.get(self.endpoint, params=params, timeout=30)
-            response.raise_for_status()
-            payload = response.json()
-            for item in payload.get("feed", [])[:limit_per_category]:
+            payload = self._request_payload(params)
+            for item in payload.get("feed", []):
+                category = _match_category_for_alpha_item(item, categories) or {"id": "company_watchlist"}
                 related = _alpha_related_tickers(item, tickers)
                 records.append(
                     _base_article_record(
@@ -267,14 +261,58 @@ class AlphaVantageNewsProvider:
                         url=item.get("url"),
                         published_at=_parse_alpha_time(item.get("time_published")),
                         category=category.get("id"),
-                        query=query,
+                        query=",".join(tickers),
                         related_tickers=related,
                         raw_summary=item.get("summary"),
                         raw_sentiment=item.get("overall_sentiment_label"),
                         raw_payload=item,
                     )
                 )
-        return dedupe_articles(pd.DataFrame.from_records(records)) if records else empty_news_frame()
+            return _limit_articles_per_category(records, limit_per_category)
+
+        topic_to_categories: dict[str, list[dict[str, Any]]] = {}
+        for category in categories:
+            topic_to_categories.setdefault(_alpha_topic_for_category(category), []).append(category)
+
+        for topic, topic_categories in topic_to_categories.items():
+            params = {
+                "function": "NEWS_SENTIMENT",
+                "apikey": key,
+                "topics": topic,
+                "limit": str(min(limit_per_category * len(topic_categories), 1000)),
+                "time_from": start_date.strftime("%Y%m%dT0000"),
+                "time_to": (end_date + timedelta(days=1)).strftime("%Y%m%dT0000"),
+                "sort": "LATEST",
+            }
+            payload = self._request_payload(params)
+            for item in payload.get("feed", []):
+                category = _match_category_for_alpha_item(item, topic_categories) or topic_categories[0]
+                related = _alpha_related_tickers(item, [])
+                records.append(
+                    _base_article_record(
+                        source_provider=self.name,
+                        publisher=item.get("source"),
+                        title=item.get("title"),
+                        url=item.get("url"),
+                        published_at=_parse_alpha_time(item.get("time_published")),
+                        category=category.get("id"),
+                        query=topic,
+                        related_tickers=related,
+                        raw_summary=item.get("summary"),
+                        raw_sentiment=item.get("overall_sentiment_label"),
+                        raw_payload=item,
+                    )
+                )
+        return _limit_articles_per_category(records, limit_per_category)
+
+    def _request_payload(self, params: dict[str, str]) -> dict[str, Any]:
+        response = requests.get(self.endpoint, params=params, timeout=30)
+        response.raise_for_status()
+        payload = response.json()
+        for key in ["Error Message", "Information", "Note"]:
+            if payload.get(key):
+                raise RuntimeError(f"Alpha Vantage returned {key}: {payload[key]}")
+        return payload
 
 
 def provider_from_config(provider_name: str | None, *, manual_file: str | None = None) -> NewsProvider:
@@ -340,6 +378,70 @@ def _parse_alpha_time(value: str | None) -> str | None:
     if pd.isna(parsed):
         return value
     return parsed.to_pydatetime().replace(tzinfo=None).isoformat()
+
+
+def _limit_articles_per_category(records: list[dict[str, Any]], limit_per_category: int) -> pd.DataFrame:
+    if not records:
+        return empty_news_frame()
+    deduped = dedupe_articles(pd.DataFrame.from_records(records))
+    return (
+        deduped.sort_values("published_at", ascending=False)
+        .groupby("category", as_index=False)
+        .head(limit_per_category)
+        .reset_index(drop=True)
+    )
+
+
+def _match_category_for_alpha_item(item: dict[str, Any], categories: list[dict[str, Any]]) -> dict[str, Any] | None:
+    haystack = " ".join(
+        str(value or "")
+        for value in [
+            item.get("title"),
+            item.get("summary"),
+            item.get("source"),
+            " ".join(
+                topic.get("topic", "")
+                for topic in item.get("topics", [])
+                if isinstance(topic, dict)
+            ),
+        ]
+    ).lower()
+    for category in categories:
+        keywords = category.get("query_keywords") or [category.get("name"), category.get("id"), category.get("group")]
+        if any(str(keyword).lower() in haystack for keyword in keywords if keyword):
+            return category
+    return None
+
+
+def _alpha_topic_for_category(category: dict[str, Any]) -> str:
+    group = str(category.get("group") or "").lower()
+    category_id = str(category.get("id") or "").lower()
+    text = f"{group} {category_id}"
+    if "crypto" in text or "blockchain" in text:
+        return "blockchain"
+    if "earnings" in text:
+        return "earnings"
+    if "ipo" in text:
+        return "ipo"
+    if "mna" in text or "merger" in text or "acquisition" in text:
+        return "mergers_and_acquisitions"
+    if "monetary" in text or "fed" in text or "rate" in text:
+        return "economy_monetary"
+    if "fiscal" in text or "shutdown" in text or "debt_ceiling" in text:
+        return "economy_fiscal"
+    if "macro" in text or "inflation" in text or "labor" in text or "gdp" in text:
+        return "economy_macro"
+    if "energy" in text or "oil" in text or "transportation" in text:
+        return "energy_transportation"
+    if "bank" in text or "credit" in text or "finance" in text:
+        return "finance"
+    if "manufacturing" in text or "semiconductor" in text or "technology" in text or "ai_" in text:
+        return "technology"
+    if "retail" in text or "consumer" in text:
+        return "retail_wholesale"
+    if "real_estate" in text:
+        return "real_estate"
+    return "financial_markets"
 
 
 def _alpha_related_tickers(item: dict[str, Any], requested_tickers: list[str]) -> list[str]:

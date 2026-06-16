@@ -1,6 +1,6 @@
 schema_version: 1
 
-default_provider: manual
+default_provider: alpha_vantage
 
 providers:
   manual:

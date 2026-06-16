@@ -32,6 +32,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-news", action="store_true")
     parser.add_argument("--skip-political", action="store_true")
     parser.add_argument("--skip-options", action="store_true")
+    parser.add_argument("--news-provider", choices=["manual", "alpha_vantage"], default=None)
+    parser.add_argument("--news-days-back", type=int, default=7)
     parser.add_argument("--political-source", choices=["manual", "house", "senate", "oge", "all"], default="manual")
     parser.add_argument("--political-max-reports", type=int, default=50)
     parser.add_argument("--run-dbt", action="store_true")
@@ -147,7 +149,19 @@ def main() -> int:
         _run_logged_command(
             run_id=run_id,
             task_name="news",
-            command=[sys.executable, "jobs/refresh_news.py", "--target", args.target],
+            command=[
+                sys.executable,
+                "jobs/refresh_news.py",
+                "--target",
+                args.target,
+                "--days-back",
+                str(args.news_days_back),
+                *(
+                    ["--provider", args.news_provider]
+                    if args.news_provider
+                    else []
+                ),
+            ],
             target=args.target,
             allow_failure=True,
         )

@@ -52,7 +52,7 @@ jobs:
 
       - name: Run orchestrated data pipeline
         run: |
-          python jobs/run_pipeline.py --target motherduck --run-dbt
+          python jobs/run_pipeline.py --target motherduck --run-dbt --political-source all --political-max-reports 20
 
       - name: Generate dbt docs
         working-directory: dbt
