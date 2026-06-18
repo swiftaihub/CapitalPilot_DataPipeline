@@ -6,7 +6,7 @@ plotly
 requests
 pydantic
 PyYAML
-duckdb
+duckdb==1.5.3
 dbt-core
 dbt-duckdb
 yfinance
